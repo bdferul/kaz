@@ -4,7 +4,7 @@ int main() {
     struct {
         char*str;
         int num;
-    } sneed[] = {
+    } sneed[] = { // anonymous structs ftw
         {"Fizz", 3},
         {"Buzz", 5},
     };
