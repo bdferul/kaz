@@ -2,7 +2,6 @@ fn main() {
     let sneed = [
         ("Fizz", 3),
         ("Buzz", 5),
-        ("Kazz", 7),
     ];
 
     for i in 1..=25 {
