@@ -1,0 +1,7 @@
+from alpine
+
+run apk add neovim tmux
+run mkdir app
+workdir /app
+
+cmd ["ash", "-l"]
