@@ -1,7 +1,4 @@
-use std::{env::current_exe, io::stdout};
-
 use rand::{thread_rng, seq::SliceRandom};
-use termion::clear::CurrentLine;
 
 type P = Vec<u8>;
 
@@ -19,7 +16,7 @@ impl Sudoku {
     pub fn v2d(&self) -> Vec<Vec<u8>> {
         let mut v2d = vec![];
         for y in 0..9 {
-            let crd = crd(0,y);
+            let crd = Self::crd(0,y);
             v2d.push(self.puz[crd..crd+9].to_vec());
         }
         v2d
@@ -29,54 +26,16 @@ impl Sudoku {
         self.puz.clone()
     }
 
-    pub fn raw_print(&self) {
-        for y in 0..9 {
-            for x in 0..9 {
-                print!("{} ", self.puz[crd(x, y)])
-            }
-            println!();
-        }
-    }
-
-    pub fn pretty_print(&self) {
-        let mut lines = vec![];
-        let mut cps = vec![0;9];
-        for y in 0..9 {
-            let mut line = String::from("| ");
-            for x in 0..9 {
-                cps[x] = line.len();
-                let n = self.puz[crd(x,y)];
-                line = format!("{}{}{}", 
-                    line,
-                    if n != 0 { n.to_string() } else { "_".to_string() }, 
-                    if x == 2 || x == 5 { " | " } else { " " }
-                );            
-            }
-            lines.push(format!("{line}|"));
-        }
-
-        let bar = vec!['-'; lines[0].len()].into_iter().collect::<String>();
-
-        println!("{bar}");
-        for y in 0..lines.len() {
-            println!("{}", lines[y]);
-            if y == 2 || y == 5 {
-                println!("{bar}")
-            }
-        }
-        println!("{bar}");
-    }
-
     fn get_possibilities(&self, pos: usize) -> Vec<u8> {
         let mut bad = vec![];
-        let (px,py) = fcrd(pos);
+        let (px,py) = Sudoku::fcrd(pos);
 
         //horizontal
         for x in 0..8 {
             if x >= px {
                 break;
             }
-            bad.push(self.puz[crd(x, py)]);
+            bad.push(self.puz[Self::crd(x, py)]);
         }
 
         //vertical
@@ -84,7 +43,7 @@ impl Sudoku {
             if y >= py {
                 break;
             }
-            bad.push(self.puz[crd(px, y)]);
+            bad.push(self.puz[Self::crd(px, y)]);
         }
 
         //square
@@ -97,7 +56,7 @@ impl Sudoku {
                     break;
                 }
 
-                bad.push(self.puz[crd(cx, cy)]);
+                bad.push(self.puz[Self::crd(cx, cy)]);
             }
         }
 
@@ -109,6 +68,15 @@ impl Sudoku {
         }
 
         good
+    }
+
+    pub fn crd(x: usize, y: usize) -> usize {
+        x + (y * 9)
+    }
+
+    /// Returns coordinate pair from usize
+    pub fn fcrd(pos: usize) -> (usize,usize) {
+        (pos%9, pos/9)
     }
 
     /// Fills the puz member with a valid sudoku puzzle
@@ -140,23 +108,14 @@ impl Sudoku {
                         self.puz[pos] = bv[*bi];
                         backtrace = false;
                     }
+
+                    println!("{}: {:?}", line!(), (pos, bv, bi));
                 }
             }
-            print!("{}\r{} {}", CurrentLine, gens, pos);
 
             pos += 1;
             gens += 1;
         }
         println!("gens: {gens}");
     }
-}
-
-/// Returns usize from coordinate pair
-fn crd(x: usize, y: usize) -> usize {
-    x + (y * 9)
-}
-
-/// Returns coordinate pair from usize
-fn fcrd(pos: usize) -> (usize,usize) {
-    (pos%9, pos/9)
 }
