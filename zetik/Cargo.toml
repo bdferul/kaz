@@ -2,6 +2,8 @@
 name = "zetik"
 version = "0.0.1"
 edition = "2021"
+repository = "https://github.com/bdferul/kaz/tree/main/zetik"
+homepage = "https://github.com/bdferul/kaz/tree/main/zetik"
 licence = "GPL-3.0"
 description = "Hub for personal code used by 3 letter"
 

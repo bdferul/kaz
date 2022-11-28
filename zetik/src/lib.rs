@@ -1,3 +1,8 @@
+//! # zetic
+//! 
+//! 'zetic' is a collection of libraries written with the intention of being ported over to high side
+
+
 pub fn add(left: usize, right: usize) -> usize {
     left + right
 }
