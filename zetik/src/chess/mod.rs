@@ -21,19 +21,20 @@ pub struct Chess {
     /// true for white, false for black
     pub turn: bool,
     /// The index of a square that is capturable via en passant
-    /// 
+    ///
     /// May need to change in the future
     pub en_passant: Option<usize>,
+    pub new_en_passant: bool,
     /// Stores the 4 possible castles as bools where 'true' indicates validity
-    /// 
+    ///
     /// Stored in the FEN order K, Q, k, q
     pub castle: [bool; 4],
     /// How many moves both players have made since the last pawn advance or piece capture
-    /// 
+    ///
     /// The game should stalemate when this counter reaches 100
     pub halfmoves: u32,
-    /// The number of completed turns in the game. 
-    /// 
+    /// The number of completed turns in the game.
+    ///
     /// This number is incremented by one every time Black moves.
     pub fullmoves: u32,
 }
@@ -108,9 +109,10 @@ impl Default for Chess {
             ],
             turn: true,
             en_passant: None,
+            new_en_passant: false,
             castle: [true;4],
             halfmoves: 0,
-            fullmoves: 0,
+            fullmoves: 1,
         }
     }
 }

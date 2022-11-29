@@ -1,5 +1,5 @@
-use crate::Chess;
 use super::lib::*;
+use crate::Chess;
 
 impl Chess {
     /// Returns the FEN char interpretation of the u8 piece value
@@ -24,7 +24,7 @@ impl Chess {
     fn fen_pos(a: usize) -> String {
         let (x, y) = fndx(a);
 
-        format!("{}{}", (('a' as u8) + x as u8) as char, y + 1)
+        format!("{}{}", (('a' as u8) + x as u8) as char, 8 - y)
     }
 
     // Returns the usize parsed from the FEN formatted string input (ie. "e3")
@@ -59,7 +59,7 @@ impl Chess {
     }
 
     /// Returns only the first part of a FEN string
-    /// 
+    ///
     /// default: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
     pub fn to_fen_pieces(&self) -> String {
         let mut r = String::new();
@@ -81,15 +81,17 @@ impl Chess {
                     cnt += 1;
                 }
             }
-            if y > 0 {
-                r = format!(
-                    "{r}{}/",
-                    if cnt > 0 {
-                        cnt.to_string()
-                    } else {
-                        String::new()
-                    }
-                )
+
+            r = format!(
+                "{r}{}/",
+                if cnt > 0 {
+                    cnt.to_string()
+                } else {
+                    String::new()
+                }
+            );
+            if y == 7 {
+                r.pop();
             }
         }
 
@@ -119,7 +121,7 @@ impl Chess {
             castle = "-".to_string();
         }
 
-        r = format!("{r} {t} {e} {castle} {} {}", self.halfmoves, self.fullmoves);
+        r = format!("{r} {t} {castle} {e} {} {}", self.halfmoves, self.fullmoves);
 
         r
     }
@@ -179,18 +181,8 @@ impl Chess {
             }
         }
 
-        //en passant
-        if items.len() > 2 {
-            if items[2] != "-" {
-                let Ok(a) = Chess::from_fen_pos(&items[2]) else {
-                    return Err("unable to parse en passant")
-                };
-                r.en_passant = Some(a);
-            }
-        }
-
         //castle
-        if items.len() > 3 {
+        if items.len() > 2 {
             let mut a = [false; 4];
             if items[3] != "-" {
                 "KQkq".chars().enumerate().for_each(|(i, c)| {
@@ -202,11 +194,22 @@ impl Chess {
             r.castle = a;
         }
 
+        //en passant
+        if items.len() > 3 {
+            if items[2] != "-" {
+                let Ok(a) = Chess::from_fen_pos(&items[2]) else {
+                    return Err("unable to parse en passant")
+                };
+                r.en_passant = Some(a);
+            }
+        }
+
         //halfmoves
         if items.len() > 4 {
             let Ok(a) = items[4].parse::<u32>() else {
                 return Err("unable to parse halfmoves")
             };
+            println!("{items:?}, {a}");
             r.halfmoves = a;
         }
 
@@ -215,11 +218,33 @@ impl Chess {
             let Ok(a) = items[5].parse::<u32>() else {
                 return Err("unable to parse fullmoves")
             };
-            r.halfmoves = a;
+            r.fullmoves = a;
         }
 
         r.board = board;
 
         Ok(r)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Chess;
+
+    #[test]
+    fn fen_from_default() {
+        let d = Chess::default();
+        assert_eq!(
+            d.to_fen(),
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        )
+    }
+
+    #[test]
+    fn fen_from_other() {
+        let s = "8/5k2/3p4/1p1Pp2p/pP2Pp1P/P4P1K/8/8 b - - 99 50".to_string();
+        let ch = Chess::from_fen(s.clone()).unwrap();
+
+        assert_eq!(ch.to_fen(), s);
     }
 }
