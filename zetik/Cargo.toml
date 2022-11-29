@@ -1,6 +1,6 @@
 [package]
 name = "zetik"
-version = "0.0.4"
+version = "0.0.5-fen"
 edition = "2021"
 repository = "https://github.com/bdferul/kaz/tree/main/zetik"
 homepage = "https://github.com/bdferul/kaz/tree/main/zetik"
