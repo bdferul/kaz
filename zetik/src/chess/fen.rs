@@ -58,8 +58,10 @@ impl Chess {
             .collect()
     }
 
-    /// Returns the game's FEN notation
-    pub fn to_fen(&self) -> String {
+    /// Returns only the first part of a FEN string
+    /// 
+    /// default: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+    pub fn to_fen_pieces(&self) -> String {
         let mut r = String::new();
         for y in 0..8 {
             let mut cnt = 0;
@@ -90,6 +92,13 @@ impl Chess {
                 )
             }
         }
+
+        r
+    }
+
+    /// Returns the game's FEN notation
+    pub fn to_fen(&self) -> String {
+        let mut r = self.to_fen_pieces();
 
         let t = if self.turn { 'w' } else { 'b' };
 
