@@ -1,6 +1,6 @@
 //! # zetik
 //!
-//! 'zetik' is a collection of libraries written with the intention of being ported over to high side
+//! A collection of libraries written with the intention of being ported over to high side
 
 mod chess;
 mod maths;
