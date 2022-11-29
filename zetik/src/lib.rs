@@ -4,4 +4,4 @@
 
 mod maths;
 
-pub use maths::Prime;
+pub use maths::prime;

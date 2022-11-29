@@ -1,7 +1,5 @@
 ///a collection of prime number operations
-pub struct Prime {}
-
-impl Prime {
+pub mod prime {
     /// returns a vector of primes that are less than the supplied argument
     pub fn primes_under(a: u32) -> Vec<u32> {
         let mut primes = vec![2];
@@ -30,7 +28,7 @@ impl Prime {
 
     /// returns nth prime number or zero
     pub fn nth(a: u32) -> u32 {
-        *Self::primes_under(a).last().unwrap_or(&0)
+        *primes_under(a).last().unwrap_or(&0)
     }
 }
 
@@ -40,6 +38,6 @@ mod tests {
 
     #[test]
     fn primes_under() {
-        assert_eq!(Prime::primes_under(25), [2,3,5,7,11,13,17,19,23])
+        assert_eq!(prime::primes_under(25), [2,3,5,7,11,13,17,19,23])
     }
 }
