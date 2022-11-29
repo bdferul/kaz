@@ -72,6 +72,13 @@ impl Chess {
         format!("{}{}", (('a' as u8) + x as u8) as char, y+1)
     }
 
+    /**
+    Returns a url friendly FEN notation with no '/' separations
+
+    Whitespace is replaced with the 'whitespace' var
+    
+    Replace whitespace with nothing by passing '/' as 'whitespace'
+     */
     pub fn to_fen_url(&self, whitespace: char) -> String {
         self.to_fen().chars().map(|c| if c == ' ' {whitespace} else {c}).filter(|c| *c != '/').collect()
     }
