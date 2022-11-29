@@ -6,4 +6,4 @@ mod chess;
 mod maths;
 
 pub use chess::Chess;
-pub use maths::prime;
+pub use maths::primes;

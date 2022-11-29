@@ -1,10 +1,40 @@
+mod fen;
+mod lib;
+mod moves;
+
+use lib::*;
+use std::fmt::Debug;
+
+/**
+A chess library built for use with web api
+
+Features
+* FEN notation support
+* * url friendly
+* * export any chess board to valid FEN
+* * create chess game from valid FEN
+*/
+#[derive(Debug, Clone)]
 pub struct Chess {
+    /// 64 long with black on top
     pub board: Vec<u8>,
     /// true for white, false for black
     pub turn: bool,
+    /// The index of a square that is capturable via en passant
+    /// 
+    /// May need to change in the future
     pub en_passant: Option<usize>,
-    pub castle: [bool;4],
+    /// Stores the 4 possible castles as bools where 'true' indicates validity
+    /// 
+    /// Stored in the FEN order K, Q, k, q
+    pub castle: [bool; 4],
+    /// How many moves both players have made since the last pawn advance or piece capture
+    /// 
+    /// The game should stalemate when this counter reaches 100
     pub halfmoves: u32,
+    /// The number of completed turns in the game. 
+    /// 
+    /// This number is incremented by one every time Black moves.
     pub fullmoves: u32,
 }
 
@@ -28,147 +58,59 @@ impl Chess {
      * 10: ♞
      * 11: ♟︎
      */
-    pub fn to_symbol(a: u8) -> char {
+    pub fn to_symbol(a: u8, whitespace: char) -> char {
         if a < 12 {
             char::from_u32(0x2654 + a as u32).unwrap_or_default()
         } else {
-            char::default()
+            whitespace
         }
     }
 
     /**
-    ♖ ♘ ♗ ♕ ♔ ♗ ♘ ♖
-
-    ♙ ♙ ♙ ♙ ♙ ♙ ♙ ♙
+    ♜ ♞ ♝ ♛ ♚ ♝ ♞ ♜
 
     ♟ ♟ ♟ ♟ ♟ ♟ ♟ ♟
 
-    ♜ ♞ ♝ ♛ ♚ ♝ ♞ ♜
+    ♙ ♙ ♙ ♙ ♙ ♙ ♙ ♙
+
+    ♖ ♘ ♗ ♕ ♔ ♗ ♘ ♖
      */
     pub fn pretty_print(&self) {
         let ts = Self::to_symbol;
         for y in 0..8 {
             for x in 0..8 {
-                print!("{} ", ts(self.board[ndx(x, y)]));
+                print!("{} ", ts(self.board[ndx(x, y)], '-'));
             }
             println!();
         }
     }
 
-    /// Returns the FEN char interpretation of the u8 piece value
-    fn fencode(a: u8) -> Option<char> {
-        if a >= 12 {
-            return None;
-        }
-
-        let codes = ['K', 'Q', 'R', 'B', 'N', 'P', 'k', 'q', 'r', 'b', 'n', 'p'];
-
-        Some(codes[a as usize])
-    }
-
-    fn fen_pos(a: usize) -> String {
-        let (x,y) = fndx(a);
-
-        format!("{}{}", (('a' as u8) + x as u8) as char, y+1)
-    }
-
-    /**
-    Returns a url friendly FEN notation with no '/' separations
-
-    Whitespace is replaced with the 'whitespace' var
-    
-    Replace whitespace with nothing by passing '/' as 'whitespace'
-     */
-    pub fn to_fen_url(&self, whitespace: char) -> String {
-        self.to_fen().chars().map(|c| if c == ' ' {whitespace} else {c}).filter(|c| *c != '/').collect()
-    }
-
-    /// Returns the game's FEN notation
-    pub fn to_fen(&self) -> String {
-        let mut r = String::new();
-        for y in (0..8).rev() {
-            let mut cnt = 0;
-            for x in 0..8 {
-                if let Some(f) = Self::fencode(self.sqr(x, y)) {
-                    r = format!(
-                        "{r}{}{}",
-                        if cnt > 0 {
-                            cnt.to_string()
-                        } else {
-                            "".to_string()
-                        },
-                        f
-                    );
-                    cnt = 0;
-                } else {
-                    cnt += 1;
-                }
-            }
-            if y > 0 {
-                r = format!(
-                    "{r}{}/",
-                    if cnt > 0 {
-                        cnt.to_string()
-                    } else {
-                        String::new()
-                    }
-                )
-            }
-        }
-
-        let t = if self.turn {'w'} else {'b'};
-
-        let e = if let Some(ep) = self.en_passant {
-            Self::fen_pos(ep)
-        } else {
-            "-".to_string()
-        };
-
-        let mut castle = String::new();
-
-        "KQkq".chars().enumerate().for_each(|(i,c)| if self.castle[i] {castle = format!("{castle}{c}")});
-        if castle == String::new() {
-            castle = "-".to_string();
-        }
-
-        r = format!("{r} {t} {e} {castle} {} {}", self.halfmoves, self.fullmoves);
-
-        r
-    }
-
+    /// Returns the value of the piece located at the given coordinates
     pub fn sqr(&self, x: usize, y: usize) -> u8 {
         self.board[ndx(x, y)]
     }
 }
 
 impl Default for Chess {
-    /// Returns the standard chess board with white on top
+    /// Returns the standard chess board with black on top
     #[rustfmt::skip]
     fn default() -> Self {
         Chess {
             board: vec![
-                02, 04, 03, 01, 00, 03, 04, 02,
-                05, 05, 05, 05, 05, 05, 05, 05,
-                12, 12, 12, 12, 12, 12, 12, 12,
-                12, 12, 12, 12, 12, 12, 12, 12,
-                12, 12, 12, 12, 12, 12, 12, 12,
-                12, 12, 12, 12, 12, 12, 12, 12,
-                11, 11, 11, 11, 11, 11, 11, 11,
                 08, 10, 09, 07, 06, 09, 10, 08,
+                11, 11, 11, 11, 11, 11, 11, 11,
+                12, 12, 12, 12, 12, 12, 12, 12,
+                12, 12, 12, 12, 12, 12, 12, 12,
+                12, 12, 12, 12, 12, 12, 12, 12,
+                12, 12, 12, 12, 12, 12, 12, 12,
+                05, 05, 05, 05, 05, 05, 05, 05,
+                02, 04, 03, 01, 00, 03, 04, 02,
             ],
             turn: true,
-            en_passant: Some(ndx(4,2)),
+            en_passant: None,
             castle: [true;4],
             halfmoves: 0,
             fullmoves: 0,
         }
     }
-}
-
-fn ndx(x: usize, y: usize) -> usize {
-    x + (y * 8)
-}
-
-fn fndx(p: usize) -> (usize,usize){
-    (p%8,p/8)
 }
