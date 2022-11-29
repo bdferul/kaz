@@ -31,7 +31,11 @@ impl Chess {
         }
 
         if match self.board[src] {
-            0 | 6 => self.king(src, dst),
+            0 | 6 => todo!(),//king
+            1 | 7 => todo!(),//queen
+            2 | 8 => todo!(),//rook
+            3 | 9 => todo!(),//bishop
+            4 | 10 => todo!(),//knight
             5 | 11 => self.pawn(src, dst),
             _ => return Err(()),
         } {
@@ -84,10 +88,6 @@ impl Chess {
 
         self.halfmoves = 0;
         return r;
-    }
-
-    fn king(&self, src: usize, dst: usize) -> bool {
-        todo!()
     }
 }
 
