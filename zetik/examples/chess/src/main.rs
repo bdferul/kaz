@@ -1,5 +1,7 @@
 use zetik::Chess;
 
 fn main() {
-    Chess::default().pretty_print()
+    println!("{}", Chess::default().to_fen());
+    println!("{}", Chess::default().to_fen_url('~'));
+    Chess::default().pretty_print();
 }

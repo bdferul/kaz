@@ -13,7 +13,7 @@ pub mod prime {
                     break;
                 }
 
-                if x*x > count {
+                if x * x > count {
                     break;
                 }
             }
@@ -38,6 +38,6 @@ mod tests {
 
     #[test]
     fn primes_under() {
-        assert_eq!(prime::primes_under(25), [2,3,5,7,11,13,17,19,23])
+        assert_eq!(prime::primes_under(25), [2, 3, 5, 7, 11, 13, 17, 19, 23])
     }
 }
