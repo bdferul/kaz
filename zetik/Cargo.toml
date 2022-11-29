@@ -1,6 +1,6 @@
 [package]
 name = "zetik"
-version = "0.0.6"
+version = "0.0.7"
 edition = "2021"
 repository = "https://github.com/bdferul/kaz/tree/main/zetik"
 homepage = "https://github.com/bdferul/kaz/tree/main/zetik"
@@ -11,4 +11,3 @@ documentation = "https://docs.rs/zetik/latest/zetik/index.html"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-num-integer = "0.1"
