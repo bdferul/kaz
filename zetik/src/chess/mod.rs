@@ -46,7 +46,7 @@ impl Chess {
     }
 
     /// Mutable reference to the internal board vector
-    pub unsafe fn board_mut(&mut self) -> &mut Vec<u8> {
+    pub fn board_mut(&mut self) -> &mut Vec<u8> {
         &mut self.board
     }
     /**
@@ -133,8 +133,10 @@ mod tests {
     #[test]
     fn board_mut() {
         let mut chess = Chess::default();
-        unsafe {
-            let b = chess.board_mut();
+        {
+        let b = chess.board_mut();
+        *b = Chess::from_fen_pieces(&"8/1b6/8/8/8/8/6B1/8".to_string()).unwrap();
         }
+        assert_eq!(chess.board()[9], 9);
     }
 }
