@@ -2,7 +2,7 @@ mod fen;
 mod lib;
 mod moves;
 
-use lib::*;
+pub use lib::*;
 use std::fmt::Debug;
 
 /**

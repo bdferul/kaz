@@ -1,11 +1,11 @@
 [package]
 name = "zetik"
-version = "0.0.8-walter"
+version = "0.0.8-jesse"
 edition = "2021"
 repository = "https://github.com/bdferul/kaz/tree/main/zetik"
 homepage = "https://github.com/bdferul/kaz/tree/main/zetik"
 license = "MIT OR Apache-2.0"
-description = "Hub for personal code used by 3 letter"
+description = "Hub for personal code used on high side"
 documentation = "https://docs.rs/zetik/latest/zetik/index.html"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

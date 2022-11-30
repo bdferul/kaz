@@ -1,5 +1,5 @@
 use super::lib::*;
-use crate::Chess;
+use crate::chess::Chess;
 
 impl Chess {
     /// Returns the FEN char interpretation of the u8 piece value
@@ -27,7 +27,7 @@ impl Chess {
         format!("{}{}", (('a' as u8) + x as u8) as char, 8 - y)
     }
 
-    // Returns the usize parsed from the FEN formatted string input (ie. "e3")
+    // Returns the usize parsed from the FEN formatted string input (ie. "e3") BROKEN
     fn from_fen_pos(s: &String) -> Result<usize, &'static str> {
         if s.len() != 2 {
             return Err("invalid len");
@@ -46,7 +46,7 @@ impl Chess {
             return Err("invalid y value");
         };
 
-        Ok(ndx(x, y as usize))
+        Ok(ndx(x, (8-y) as usize)+1)
     }
 
     /// Returns a url friendly FEN notation with no '/' separations and '.' as the whitespace
@@ -184,9 +184,9 @@ impl Chess {
         //castle
         if items.len() > 2 {
             let mut a = [false; 4];
-            if items[3] != "-" {
+            if items[2] != "-" {
                 "KQkq".chars().enumerate().for_each(|(i, c)| {
-                    if items[3].contains(c) {
+                    if items[2].contains(c) {
                         a[i] = true;
                     }
                 })
@@ -196,8 +196,8 @@ impl Chess {
 
         //en passant
         if items.len() > 3 {
-            if items[2] != "-" {
-                let Ok(a) = Chess::from_fen_pos(&items[2]) else {
+            if items[3] != "-" {
+                let Ok(a) = Chess::from_fen_pos(&items[3]) else {
                     return Err("unable to parse en passant")
                 };
                 r.en_passant = Some(a);
@@ -209,7 +209,6 @@ impl Chess {
             let Ok(a) = items[4].parse::<u32>() else {
                 return Err("unable to parse halfmoves")
             };
-            println!("{items:?}, {a}");
             r.halfmoves = a;
         }
 
@@ -229,7 +228,7 @@ impl Chess {
 
 #[cfg(test)]
 mod tests {
-    use crate::Chess;
+    use crate::chess::Chess;
 
     #[test]
     fn fen_from_default() {
