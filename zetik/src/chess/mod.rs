@@ -134,8 +134,8 @@ mod tests {
     fn board_mut() {
         let mut chess = Chess::default();
         {
-        let b = chess.board_mut();
-        *b = Chess::from_fen_pieces(&"8/1b6/8/8/8/8/6B1/8".to_string()).unwrap();
+            let b = chess.board_mut();
+            *b = Chess::from_fen_pieces(&"8/1b6/8/8/8/8/6B1/8".to_string()).unwrap();
         }
         assert_eq!(chess.board()[9], 9);
     }

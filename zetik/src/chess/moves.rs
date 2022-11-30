@@ -59,8 +59,8 @@ impl Chess {
     }
 
     pub fn capturable(&self, pos: usize) -> bool {
-        ((0..=5).contains(&self.board[pos]) && !self.turn) ||
-        ((6..=11).contains(&self.board[pos]) && self.turn)
+        ((0..=5).contains(&self.board[pos]) && !self.turn)
+            || ((6..=11).contains(&self.board[pos]) && self.turn)
     }
 
     fn pawn(&mut self, src: usize, dst: usize) -> bool {
@@ -70,10 +70,10 @@ impl Chess {
 
         let (src_x, src_y) = fndx(src);
         let (dst_x, dst_y) = fndx(dst);
-        let (src_x,src_y,dst_x,dst_y) = (src_x as i32, src_y as i32, dst_x as i32, dst_y as i32);
+        let (src_x, src_y, dst_x, dst_y) = (src_x as i32, src_y as i32, dst_x as i32, dst_y as i32);
 
         if src_x == 0 && dir == -1 {
-            return false
+            return false;
         }
 
         if self.board[dst] != 12 && dst == self.en_passant.unwrap_or(64) {
@@ -96,7 +96,7 @@ impl Chess {
 
             if let Some(ep) = self.en_passant {
                 if ep == dst {
-                    self.board[ndx(dst_x as usize,src_y as usize)];
+                    self.board[ndx(dst_x as usize, src_y as usize)];
                     r = true;
                 }
             }
@@ -128,7 +128,7 @@ mod tests {
     #[test]
     fn wrong_color_turn() {
         let mut chess = Chess::from_fen("8/8/8/p6P/8/8/8/8 w".to_string()).unwrap();
-        assert!(chess.mv(ndx(0, 3), ndx(0, 2)).is_err());// try move the black pawn like a white pawn
+        assert!(chess.mv(ndx(0, 3), ndx(0, 2)).is_err()); // try move the black pawn like a white pawn
         assert!(chess.turn == true); //ensure it is still white's turn after a failed move
     }
 
@@ -174,15 +174,12 @@ mod tests {
     fn pawn_capture() {
         let ffp = |s: &str| Chess::from_fen_pos(&s.to_string()).unwrap();
         let mut chess = Chess::from_fen("p7/1P6/8/8/8/8/8/8 w".to_string()).unwrap();
-        assert!(chess.mv(ffp("b7"),ffp("a8")).is_ok());
+        assert!(chess.mv(ffp("b7"), ffp("a8")).is_ok());
     }
 
     #[test]
     fn pawn_en_passant() {
-        let mut chess = Chess::from_fen(
-            "8/8/8/4Pp2/8/8/8/8 w KQkq f6 0 3".to_string(),
-        )
-        .unwrap();
+        let mut chess = Chess::from_fen("8/8/8/4Pp2/8/8/8/8 w KQkq f6 0 3".to_string()).unwrap();
         assert!(chess.mv(28, 21).is_ok());
     }
 
