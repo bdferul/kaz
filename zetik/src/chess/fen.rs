@@ -21,32 +21,40 @@ impl Chess {
     }
 
     /// Returns a FEN formatted index of a square on a board (ie. "e3")
-    fn fen_pos(a: usize) -> String {
-        let (x, y) = fndx(a);
-
-        format!("{}{}", (('a' as u8) + x as u8) as char, 8 - y)
-    }
-
-    // Returns the usize parsed from the FEN formatted string input (ie. "e3") BROKEN
-    fn from_fen_pos(s: &String) -> Result<usize, &'static str> {
-        if s.len() != 2 {
-            return Err("invalid len");
+    fn fen_pos(a: usize) -> Result<String, ()> {
+        if a >= 64 {
+            return Err(());
         }
 
-        let mut x = s.chars().nth(0).unwrap() as usize;
-        let h = 'h' as usize;
-        let a = 'a' as usize;
-        if x <= h && x >= a {
-            x = h - x;
-        } else {
+        let (x, y) = fndx(a);
+
+        Ok(format!("{}{}", (('a' as u8) + x as u8) as char, 8 - y))
+    }
+
+    // Returns the usize parsed from the FEN formatted string input (ie. "e3")
+    fn from_fen_pos(s: &String) -> Result<usize, &'static str> {
+        if s.len() != 2 {
+            return Err("invalid string length");
+        }
+
+        let chars = s.chars().collect::<Vec<char>>();
+
+        if (chars[0] as usize) < ('a' as usize) || chars[0] as usize > 'h' as usize {
             return Err("invalid x value");
         }
 
-        let Some(y) = s.chars().nth(1).unwrap().to_digit(10) else {
-            return Err("invalid y value");
+        let x = chars[0] as usize - 'a' as usize;
+        let Ok(y) = chars[1].to_string().parse::<usize>() else {
+            return Err("invalid y value")
         };
 
-        Ok(ndx(x, (8-y) as usize)+1)
+        if y > 8 {
+            return Err("invalid y value");
+        }
+
+        let y = 8 - y;
+
+        Ok(ndx(x, y))
     }
 
     /// Returns a url friendly FEN notation with no '/' separations and '.' as the whitespace
@@ -105,7 +113,7 @@ impl Chess {
         let t = if self.turn { 'w' } else { 'b' };
 
         let e = if let Some(ep) = self.en_passant {
-            Self::fen_pos(ep)
+            Self::fen_pos(ep).unwrap()
         } else {
             "-".to_string()
         };
@@ -228,6 +236,7 @@ impl Chess {
 
 #[cfg(test)]
 mod tests {
+    use crate::chess::ndx;
     use crate::chess::Chess;
 
     #[test]
@@ -245,5 +254,48 @@ mod tests {
         let ch = Chess::from_fen(s.clone()).unwrap();
 
         assert_eq!(ch.to_fen(), s);
+    }
+
+    #[test]
+    fn from_fen_pos() {
+        let cases = [
+            ("e6", ndx(4, 2)),
+            ("c4", ndx(2, 4)),
+            ("d8", ndx(3, 0)),
+            ("a1", ndx(0, 7)),
+            ("a8", ndx(0, 0)),
+            ("h1", ndx(7, 7)),
+            ("h8", ndx(7, 0)),
+        ];
+
+        cases
+            .into_iter()
+            .for_each(|(a, b)| assert_eq!(Chess::from_fen_pos(&a.to_string()).unwrap(), b));
+
+        let f = |s: &str| Chess::from_fen_pos(&s.to_string()).is_err();
+
+        assert!(f(""));
+        assert!(f("a9"));
+        assert!(f("A5"));
+        assert!(f("j3"));
+    }
+
+    #[test]
+    fn fen_pos() {
+        let cases = [
+            ("e6", ndx(4, 2)),
+            ("c4", ndx(2, 4)),
+            ("d8", ndx(3, 0)),
+            ("a1", ndx(0, 7)),
+            ("a8", ndx(0, 0)),
+            ("h1", ndx(7, 7)),
+            ("h8", ndx(7, 0)),
+        ];
+
+        cases
+            .into_iter()
+            .for_each(|(a, b)| assert_eq!(a.to_string(), Chess::fen_pos(b).unwrap()));
+
+        assert!(Chess::fen_pos(64).is_err());
     }
 }

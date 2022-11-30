@@ -17,7 +17,7 @@ Features
 #[derive(Debug, Clone)]
 pub struct Chess {
     /// 64 long with black on top
-    pub board: Vec<u8>,
+    board: Vec<u8>,
     /// true for white, false for black
     pub turn: bool,
     /// The index of a square that is capturable via en passant
@@ -40,6 +40,15 @@ pub struct Chess {
 }
 
 impl Chess {
+    /// Clone of the internal board vector
+    pub fn board(&self) -> Vec<u8> {
+        self.board.clone()
+    }
+
+    /// Mutable reference to the internal board vector
+    pub unsafe fn board_mut(&mut self) -> &mut Vec<u8> {
+        &mut self.board
+    }
     /**
     Each piece value corresponds to the unicode position of its symbol
 
@@ -113,6 +122,19 @@ impl Default for Chess {
             castle: [true;4],
             halfmoves: 0,
             fullmoves: 1,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Chess;
+
+    #[test]
+    fn board_mut() {
+        let mut chess = Chess::default();
+        unsafe {
+            let b = chess.board_mut();
         }
     }
 }

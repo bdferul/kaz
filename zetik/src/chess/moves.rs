@@ -30,6 +30,12 @@ impl Chess {
             return Err(());
         }
 
+        if ((0..5).contains(&self.board[src]) && !self.turn)
+            || ((6..11).contains(&self.board[src]) && self.turn) 
+        {
+            return Err(());
+        }
+
         if match self.board[src] {
             0 | 6 => todo!(),  //king
             1 | 7 => todo!(),  //queen
@@ -64,7 +70,7 @@ impl Chess {
         let dir = if self.turn { -1 } else { 1 };
 
         let (src_x, src_y) = fndx(src);
-        let (dst_x,dst_y) = fndx(dst);
+        let (dst_x, dst_y) = fndx(dst);
 
         if self.board[dst] != 12 && dst == self.en_passant.unwrap_or(64) {
             return false;
@@ -77,23 +83,14 @@ impl Chess {
                 r = true;
             }
         }
-        
+
         println!("{}: {:?}", line!(), (self.board[dst], dst, self.en_passant));
         //capture
-        if self.board[dst] != 12 || dst == self.en_passant.unwrap_or(64) {
-            println!("{}", line!());
-            if dst_y == single_step_y as usize && dst_x as i32 == src_x as i32 + 1 | src_x as i32 - 1 {
-                if dst == self.en_passant.unwrap_or(64) {
-                    self.capture((dst as i32 + (-dir)) as usize)
-                } else {
-                    self.capture(dst);
-                }
-                r = true;
-            }
-        }
 
         //double step **MUST GO LAST** (because of new_en_passant)
-        if self.board[ndx(dst_x,single_step_y as usize)] == 12 && ((self.turn && src_y == 6) || (!self.turn && src_y == 1)) {
+        if self.board[ndx(dst_x, single_step_y as usize)] == 12
+            && ((self.turn && src_y == 6) || (!self.turn && src_y == 1))
+        {
             let dy = src_y as i32 + (2 * dir);
             if 0 <= dy && dy < 64 {
                 if ndx(src_x, dy as usize) == dst {
@@ -103,8 +100,6 @@ impl Chess {
                 }
             }
         }
-
-        
 
         self.halfmoves = 0;
         return r;
@@ -138,8 +133,11 @@ mod tests {
             d.to_fen(),
             "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
         );
-        let mut chess = Chess::from_fen("rnbqkbnr/pp1ppp1p/8/3P4/5PP1/2p1P1p1/PPP4P/RNBQKBNR w KQkq - 0 7".to_string()).unwrap();
-        assert!(chess.mv(ndx(2, 6),ndx(2, 4)).is_err())
+        let mut chess = Chess::from_fen(
+            "rnbqkbnr/pp1ppp1p/8/3P4/5PP1/2p1P1p1/PPP4P/RNBQKBNR w KQkq - 0 7".to_string(),
+        )
+        .unwrap();
+        assert!(chess.mv(ndx(2, 6), ndx(2, 4)).is_err())
     }
 
     #[test]
@@ -148,11 +146,18 @@ mod tests {
         assert!(d.mv(ndx(7, 6), ndx(7, 6)).is_err());
         assert!(d.mv(ndx(7, 6), ndx(7, 3)).is_err());
         assert!(d.mv(ndx(2, 6), ndx(3, 5)).is_err());
+
+        let mut chess = Chess::from_fen("8/8/8/p6P/8/8/8/8 w".to_string()).unwrap();
+        assert!(chess.mv(ndx(0, 3), ndx(0, 2)).is_err());// try move the black pawn like a white pawn
+        assert!(chess.turn == true); //ensure it is still white's turn after a failed move
     }
 
     #[test]
     fn pawn_en_passant() {
-        let mut chess = Chess::from_fen("rnbqkbnr/1pppp1pp/p7/4Pp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3".to_string()).unwrap();
+        let mut chess = Chess::from_fen(
+            "rnbqkbnr/1pppp1pp/p7/4Pp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3".to_string(),
+        )
+        .unwrap();
         assert!(chess.mv(28, 21).is_ok());
     }
 }

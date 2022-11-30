@@ -1,5 +1,6 @@
 use zetik::{self, chess::{Chess,ndx}};
 use dioxus::prelude::*;
+
 #[derive(Default, Clone)]
 struct ChessBoard {
     chess: Chess,
