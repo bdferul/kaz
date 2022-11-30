@@ -1,5 +1,3 @@
-use std::borrow::Borrow;
-
 use super::lib::*;
 use crate::chess::Chess;
 
