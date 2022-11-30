@@ -32,7 +32,7 @@ impl Chess {
     }
 
     // Returns the usize parsed from the FEN formatted string input (ie. "e3")
-    fn from_fen_pos(s: &String) -> Result<usize, &'static str> {
+    pub fn from_fen_pos(s: &String) -> Result<usize, &'static str> {
         if s.len() != 2 {
             return Err("invalid string length");
         }
