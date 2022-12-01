@@ -20,6 +20,4 @@
 //! ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢷⠾⠛⠂⢹⠀⠀⠀⢡⠀⠀⠀⠀⠀⠙⠛⠿⢿<br/>
 
 pub mod chess;
-mod maths;
-
-pub use maths::primes;
+pub mod maths;

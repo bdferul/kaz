@@ -3,3 +3,10 @@
     height: 2rem;
     font-size: larger;
 }
+
+.log {
+    height: 5rem;
+    overflow-y: scroll;
+    width: min-content;
+    white-space: nowrap;
+}

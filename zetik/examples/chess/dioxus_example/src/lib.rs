@@ -1,5 +1,8 @@
-use zetik::{self, chess::{Chess,ndx}};
 use dioxus::prelude::*;
+use zetik::{
+    chess::{ndx, Chess},
+    tailwind as tw,
+};
 
 #[derive(Default, Clone)]
 struct ChessBoard {
@@ -18,6 +21,7 @@ pub fn app(cx: Scope<()>) -> Element {
         p {[format_args!("{:?},{:?}", chess_board.chess.en_passant,Chess::from_fen(chess_board.chess.to_fen()).unwrap().en_passant)]}
         p {"{hovering}"}
         table {
+            style: format_args!("{}", tw::tw(vec![tw::mx_auto])),
             (0..8).map(|y| rsx!(
                 tr {
                     (0..8).map(|x| rsx!(
@@ -25,17 +29,21 @@ pub fn app(cx: Scope<()>) -> Element {
                             button {
                                 class: "chess_button",
                                 onclick: move |_| chess_board.with_mut(|cb| cb.select(x,y)),
-                                onmouseover: move |_| hovering.modify(|v| ndx(x, y)),
-                                [format_args!("{}", Chess::to_symbol(chess_board.chess.board[x+(8*y)],' '))]
+                                onmouseover: move |_| hovering.modify(|_| ndx(x, y)),
+                                [format_args!("{}", Chess::to_symbol(chess_board.chess.board()[x+(8*y)],' '))]
                             }
                         }
                     ))
                 }
             ))
         }
-        chess_board.log.iter().map(|msg| rsx!(
-            p { "{msg}" }
-        ))
+        div {
+            class: "log",
+            chess_board.log.iter().map(|msg| rsx!(
+                "{msg}" ,
+                br {}
+            ))
+        }
     ))
 }
 
@@ -48,7 +56,7 @@ impl ChessBoard {
             }
             self.selection = None;
         } else {
-            if self.chess.board[pos] != 12 {
+            if self.chess.board()[pos] != 12 {
                 self.selection = Some(pos)
             }
         }

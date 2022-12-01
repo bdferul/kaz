@@ -96,7 +96,7 @@ impl Chess {
 
             if let Some(ep) = self.en_passant {
                 if ep == dst {
-                    self.board[ndx(dst_x as usize, src_y as usize)];
+                    self.board[ndx(dst_x as usize, src_y as usize)] = 12;
                     r = true;
                 }
             }
@@ -185,7 +185,9 @@ mod tests {
 
     #[test]
     fn bishop() {
-        let bd = Chess::from_fen("b7/8/8/8/8/8/8/7B w".to_string()).unwrap();
-        bd.pretty_print();
+        let mut bd = Chess::from_fen("b7/8/8/8/8/8/8/7B w".to_string()).unwrap();
+        assert!(bd.mv(64, ndx(5, 5)).is_ok());
+        assert!(bd.mv(0, ndx(1, 1)).is_ok());
+        assert!(bd.mv(ndx(5, 5), ndx(5, 4)).is_err());
     }
 }
