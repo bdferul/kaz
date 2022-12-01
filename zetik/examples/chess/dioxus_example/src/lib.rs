@@ -1,8 +1,6 @@
 use dioxus::prelude::*;
-use zetik::{
-    chess::{ndx, Chess},
-    tailwind as tw,
-};
+use zetik::chess::{ndx, Chess};
+use zetik_tailwind::tailwind::{tw,classes::*};
 
 #[derive(Default, Clone)]
 struct ChessBoard {
@@ -21,7 +19,7 @@ pub fn app(cx: Scope<()>) -> Element {
         p {[format_args!("{:?},{:?}", chess_board.chess.en_passant,Chess::from_fen(chess_board.chess.to_fen()).unwrap().en_passant)]}
         p {"{hovering}"}
         table {
-            style: format_args!("{}", tw::tw(vec![tw::mx_auto])),
+            style: format_args!("{}", tw(vec![mx_auto])),
             (0..8).map(|y| rsx!(
                 tr {
                     (0..8).map(|x| rsx!(
