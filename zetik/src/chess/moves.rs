@@ -72,13 +72,21 @@ impl Chess {
         let (dst_x, dst_y) = fndx(dst);
         let (src_x, src_y, dst_x, dst_y) = (src_x as i32, src_y as i32, dst_x as i32, dst_y as i32);
 
+        //no vertical captures
+        if src_x == dst_x && self.board[dst] != 12 {
+            return false;
+        }
+
+        //no going above the board
         if src_x == 0 && dir == -1 {
             return false;
         }
 
+        /*
         if self.board[dst] != 12 && dst == self.en_passant.unwrap_or(64) {
             return false;
         }
+        */
 
         //single step
         let single_step_y = src_y as i32 + dir;

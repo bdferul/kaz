@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 use zetik::chess::{ndx, Chess};
-use zetik_tailwind::tailwind::{tw,classes::*};
+use zetik_tailwind::{twa,tailwind::classes::*};
 
 #[derive(Default, Clone)]
 struct ChessBoard {
@@ -14,33 +14,36 @@ pub fn app(cx: Scope<()>) -> Element {
     let hovering = use_state(&cx, || 0);
 
     cx.render(rsx!(
-        style {[include_str!("./style.css")]}
-        p {[format_args!("{}", chess_board.chess.to_fen())]}
-        p {[format_args!("{:?},{:?}", chess_board.chess.en_passant,Chess::from_fen(chess_board.chess.to_fen()).unwrap().en_passant)]}
-        p {"{hovering}"}
-        table {
-            style: format_args!("{}", tw(vec![mx_auto])),
-            (0..8).map(|y| rsx!(
-                tr {
-                    (0..8).map(|x| rsx!(
-                        td {
-                            button {
-                                class: "chess_button",
-                                onclick: move |_| chess_board.with_mut(|cb| cb.select(x,y)),
-                                onmouseover: move |_| hovering.modify(|_| ndx(x, y)),
-                                [format_args!("{}", Chess::to_symbol(chess_board.chess.board()[x+(8*y)],' '))]
-                            }
-                        }
-                    ))
-                }
-            ))
-        }
         div {
-            class: "log",
-            chess_board.log.iter().map(|msg| rsx!(
-                "{msg}" ,
-                br {}
-            ))
+            style: twa!(text_amber_500, top_0, left_0, absolute, w_full, h_full, p_3),
+            p {[format_args!("{}", chess_board.chess.to_fen())]}
+            p {[format_args!("{:?},{:?}", chess_board.chess.en_passant,Chess::from_fen(chess_board.chess.to_fen()).unwrap().en_passant)]}
+            p {"{hovering}"}
+            p {[format_args!("Selected: {:?}", chess_board.selection)]}
+            table {
+                style: twa![mx_auto, border, border_stone_800, text_yellow_100],
+                (0..8).map(|y| rsx!(
+                    tr {
+                        (0..8).map(|x| rsx!(
+                            td {
+                                button {
+                                    style: twa![w_7, h_7],
+                                    onclick: move |_| chess_board.with_mut(|cb| cb.select(x,y)),
+                                    onmouseover: move |_| hovering.modify(|_| ndx(x, y)),
+                                    [format_args!("{}", Chess::to_symbol(chess_board.chess.board()[x+(8*y)],'h'))]
+                                }
+                            }
+                        ))
+                    }
+                ))
+            }
+            div {
+                class: "log",
+                chess_board.log.iter().enumerate().map(|(i,msg)| rsx!(
+                    "{i}: {msg}" ,
+                    br {}
+                ))
+            }
         }
     ))
 }
