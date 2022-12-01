@@ -34,11 +34,15 @@ impl Chess {
             return Err(());
         }
 
+        if self.board[dst] != 12 && !self.capturable(dst) {
+            return Err(());
+        }
+
         if match self.board[src] {
             0 | 6 => todo!(),  //king
             1 | 7 => todo!(),  //queen
             2 | 8 => todo!(),  //rook
-            3 | 9 => todo!(),  //bishop
+            3 | 9 => self.bishop(src, dst),  //bishop
             4 | 10 => todo!(), //knight
             5 | 11 => self.pawn(src, dst),
             _ => return Err(()),
@@ -61,6 +65,72 @@ impl Chess {
     pub fn capturable(&self, pos: usize) -> bool {
         ((0..=5).contains(&self.board[pos]) && !self.turn)
             || ((6..=11).contains(&self.board[pos]) && self.turn)
+    }
+
+    fn bishop(&mut self, src: usize, dst: usize) -> bool {
+        if self.bishop_possible(src).contains(&dst) {
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn bishop_possible(&self, src: usize) -> Vec<usize> {
+        let mut r = vec![];
+        let (src_x,src_y) = fndx(src);
+        let [mut is_ne, mut is_se, mut is_sw, mut is_nw] = [true;4];
+
+        //Northeast
+        for i in 1..8 {
+            let ex = if src_x + i <= 7 {
+                src_x + i
+            } else {
+                is_ne = false;
+                is_se = false;
+                0
+            };
+            let wx = if i <= src_x {
+                src_x - i
+            } else {
+                is_sw = false;
+                is_nw = false;
+                0
+            };
+            let sy = if src_y + i <= 7 {
+                src_y + i
+            } else {
+                is_sw = false;
+                is_se = false;
+                0
+            };
+            let ny = if i <= src_y {
+                src_y - i
+            } else {
+                is_nw = false;
+                is_ne = false;
+                0
+            };
+
+            let cardinal = [
+                (&mut is_ne, ex,ny),
+                (&mut is_se, ex,sy),
+                (&mut is_sw, wx,sy),
+                (&mut is_nw, wx,ny),
+            ];
+
+            for (d,x,y) in cardinal {
+                if *d {
+                    let ndx = mdx!(x,y);
+                    r.push(ndx);
+                    println!("{}: {:?}", line!(), (ndx,x,y,i));
+                    if self.board[ndx] != 12 {
+                        *d = false;
+                    }
+                }
+            }
+        }
+
+        r
     }
 
     fn pawn(&mut self, src: usize, dst: usize) -> bool {
@@ -91,7 +161,7 @@ impl Chess {
         //single step
         let single_step_y = src_y as i32 + dir;
         if 0 <= single_step_y && single_step_y < 64 {
-            if ndx(src_x as usize, single_step_y as usize) == dst {
+            if mdx!(src_x, single_step_y) == dst {
                 r = true;
             }
         }
@@ -104,20 +174,20 @@ impl Chess {
 
             if let Some(ep) = self.en_passant {
                 if ep == dst {
-                    self.board[ndx(dst_x as usize, src_y as usize)] = 12;
+                    self.board[mdx!(dst_x, src_y)] = 12;
                     r = true;
                 }
             }
         }
 
         //double step **MUST GO LAST** (because of 'new_en_passant')
-        if self.board[ndx(dst_x as usize, single_step_y as usize)] == 12
+        if self.board[mdx!(dst_x, single_step_y)] == 12
             && ((self.turn && src_y == 6) || (!self.turn && src_y == 1))
         {
             let dy = src_y + (2 * dir);
             if 0 <= dy && dy < 64 {
-                if ndx(src_x as usize, dy as usize) == dst {
-                    self.en_passant = Some(ndx(src_x as usize, single_step_y as usize));
+                if mdx!(src_x, dy) == dst {
+                    self.en_passant = Some(mdx!(src_x, single_step_y));
                     self.new_en_passant = true;
                     r = true;
                 }

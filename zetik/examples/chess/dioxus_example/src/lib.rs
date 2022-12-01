@@ -27,10 +27,10 @@ pub fn app(cx: Scope<()>) -> Element {
                         (0..8).map(|x| rsx!(
                             td {
                                 button {
-                                    style: twa![w_7, h_7],
+                                    style: twa![w_12, h_12, "font-size: 1.875rem;", if chess_board.chess.bishop_possible(**hovering).contains(&ndx(x,y)) {"background-color: rgb(252 165 165);"} else { "" }],
                                     onclick: move |_| chess_board.with_mut(|cb| cb.select(x,y)),
                                     onmouseover: move |_| hovering.modify(|_| ndx(x, y)),
-                                    [format_args!("{}", Chess::to_symbol(chess_board.chess.board()[x+(8*y)],'h'))]
+                                    [format_args!("{}", Chess::to_symbol(chess_board.chess.board()[x+(8*y)],'-'))]
                                 }
                             }
                         ))

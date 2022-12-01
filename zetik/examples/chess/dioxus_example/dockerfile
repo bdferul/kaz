@@ -1,0 +1,6 @@
+from laddertheory/trunk
+
+copy  ../../../../ /kaz
+workdir /kaz/zetik/examples/chess/dioxus_example
+
+cmd ["trunk", "serve"]
