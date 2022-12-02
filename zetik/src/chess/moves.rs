@@ -39,7 +39,7 @@ impl Chess {
             return Err(());
         }
 
-        let (possible, double_dst, en_passant) = self.possibilities(src);
+        let (possible, double_dst, en_passant) = self.unchecked_possibilities(src);
 
         if possible.contains(&dst) {
             let mut tmp_game = self.clone();
@@ -49,12 +49,58 @@ impl Chess {
             if !tmp_game.in_check(self.turn) {
                 //tmp_game.turn.flip();
                 *self = tmp_game;
+                
+                self.set_check();
+                self.checkmate = self.is_checkmate();
+                self.stalemate = self.is_stalemate();
                 return Ok(());
             } else {
                 return Err(());
             }
         }
         Err(())
+    }
+
+    pub fn set_check(&mut self) {
+        self.check = match (self.in_check(White),self.in_check(Black)) {
+                    (true,_) => Some(White),
+                    (_,true) => Some(Black),
+                    _ => None,
+                };
+    }
+
+
+
+    fn positions_of_side(&self, turn: Side) -> Vec<usize> {
+        self.board.iter().enumerate().filter(|(_,x)| {
+            let Some(p) = x else {
+                return false;
+            };
+
+            p.side != turn
+        }).map(|(i,_)| i).collect()
+    }
+
+    pub fn is_checkmate(&self) -> bool {
+        let Some(in_check) = self.check else {
+            return false;
+        };
+
+        let friendlies = self.positions_of_side(in_check);
+
+        friendlies.iter().all(|f| self.possibilities(*f).0.len() == 0)
+    }
+
+    pub fn is_stalemate(&self) -> bool {
+        if self.checkmate {
+            return false
+        }
+
+        if self.halfmoves == 100 {
+            return true
+        }
+
+        self.positions_of_side(self.turn).iter().all(|f| self.possibilities(*f).0.len() == 0)
     }
 
     /// moves the piece from src -> dst, updating all relevant fields, without checking anything
@@ -86,6 +132,16 @@ impl Chess {
     }
 
     pub fn possibilities(&self, src: usize) -> (Vec<usize>, Option<usize>, Option<usize>) {
+        let (a,b,c) = self.unchecked_possibilities(src);
+
+        (a.into_iter().filter(|x| {
+            let mut tmp = self.clone();
+            Chess::move_unchecked(&mut tmp, src, *x, b, c);
+            !tmp.in_check(self.turn)
+        }).collect(),b,c)
+    }
+
+    fn unchecked_possibilities(&self, src: usize) -> (Vec<usize>, Option<usize>, Option<usize>) {
         let mut tails = (None, None);
         (
             match self.board[src] {
@@ -114,6 +170,7 @@ impl Chess {
                 Some(piece) => piece.side != self.turn,
                 None => true,
             })
+            
             .collect(),
             tails.0,
             tails.1,
@@ -406,12 +463,35 @@ impl Chess {
         r
     }
 
+    /// Checks if the given turn is in check
     fn in_check(&self, turn: Side) -> bool {
+        let mut enemy_board = self.clone();
+        enemy_board.turn = !turn;
+        let enemies: Vec<usize> = self.board.iter().enumerate().filter(|(_,x)| {
+            let Some(p) = x else {
+                return false;
+            };
+
+            p.side != turn
+        }).map(|(i,_)| i).collect();
+
+        enemies.into_iter().any(|enemy| {
+            let ebu = enemy_board.unchecked_possibilities(enemy).0;
+            ebu.into_iter().any(|e_move| {
+                if let Some(p) = self.board[e_move] {
+                    p.side == turn && p.rank == King
+                } else {
+                    false
+                }
+            })
+        })
+
+        /*
         let mut enemy_board = self.clone();
         enemy_board.turn.flip();
         self.friendly_positions().into_iter().any(|i| {
-            println!("{}: {:?}", line!(),(i, self.possibilities(i).0, self.turn, turn));
-            self.possibilities(i).0.into_iter().any(|j| {
+            println!("{}: {:?}", line!(),(i, self.unchecked_possibilities(i).0, self.turn, turn));
+            self.unchecked_possibilities(i).0.into_iter().any(|j| {
                 if let Some(p) = self.board[j] {
                     p.side == turn && p.rank == King
                 } else {
@@ -419,6 +499,7 @@ impl Chess {
                 }
             })
         })
+        */
     }
 }
 

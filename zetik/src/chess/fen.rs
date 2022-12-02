@@ -174,6 +174,7 @@ impl Chess {
 
     /// Returns chess struct derrived from the parsed FEN string
     pub fn from_fen(fen: String) -> Result<Chess, &'static str> {
+        let fen = fen.trim();
         let items: Vec<String> = fen.split(&[' ', '.'][..]).map(|s| s.to_string()).collect();
 
         let ffp = Chess::from_fen_pieces(&items[0]);
@@ -232,6 +233,10 @@ impl Chess {
         }
 
         r.board = board;
+
+        r.set_check();
+        r.checkmate = r.is_checkmate();
+        r.stalemate = r.is_stalemate();
 
         Ok(r)
     }

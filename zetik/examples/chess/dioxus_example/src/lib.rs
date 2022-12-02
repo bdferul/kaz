@@ -1,4 +1,4 @@
-use dioxus::{prelude::*, events::onclick};
+use dioxus::{prelude::*, events::onmouseleave};
 use zetik::{chess::{ndx, Chess, fndx}, mdx};
 use zetik_tailwind::{twa,tailwind::classes::*};
 
@@ -11,7 +11,7 @@ struct ChessBoard {
 
 pub fn app(cx: Scope<()>) -> Element {
     let chess_board = use_state(&cx, || ChessBoard::default());
-    let hovering = use_state(&cx, || 0);
+    let hovering = use_state(&cx, || None);
     let input_fen = use_state(&cx, || String::new());
     let input_fen_error = use_state(&cx, || String::new());
 
@@ -21,10 +21,13 @@ pub fn app(cx: Scope<()>) -> Element {
         } else {
             bg_fuchsia_200
         };
-        if chess_board.chess.possibilities(**hovering).0.contains(&mdx!(x,y)) {
-        //if chess_board.chess.king_possible(**hovering).contains(&mdx!(x,y)) {
-            r = bg_amber_500;
+        if let Some(h) = **hovering {
+            if chess_board.chess.possibilities(h).0.contains(&mdx!(x,y)) {
+            //if chess_board.chess.king_possible(**hovering).contains(&mdx!(x,y)) {
+                r = bg_amber_500;
+            }
         }
+        
         if let Some(a) = chess_board.selection {
             if chess_board.chess.possibilities(a).0.contains(&mdx!(x,y)) {
                 r = bg_green_500;
@@ -35,7 +38,7 @@ pub fn app(cx: Scope<()>) -> Element {
 
     cx.render(rsx!(
         div {
-            style: twa!(top_0, left_0, absolute, w_full, h_full, p_3, bg_stone_800, text_stone_300),
+            style: twa!(top_0, left_0, absolute, w_full, h_full, p_3, bg_stone_800, text_stone_300, overflow_scroll),
             p {[format_args!("{}", chess_board.chess.to_fen())]}
             "Input FEN: "
             input {
@@ -56,9 +59,11 @@ pub fn app(cx: Scope<()>) -> Element {
             }
             "{input_fen_error}"
             p {[format_args!("En passant: {:?}", chess_board.chess.en_passant)]}
-            p {[format_args!("Hover: {hovering} : {:?}", fndx(**hovering))]}
+            p {[format_args!("Hover: {hovering:?} : {:?}", if let Some(h) = **hovering {Some(fndx(h))} else {None})]}
             p {[format_args!("Selected: {:?}", chess_board.selection)]}
-            
+            p {[format_args!("Check: {:?}", chess_board.chess.check)]}
+            p {[format_args!("Checkmate: {}", chess_board.chess.checkmate)]}
+            p {[format_args!("Stalemate: {}", chess_board.chess.stalemate)]}
             table {
                 style: twa![mx_auto, border, border_stone_800, text_yellow_100],
                 (0..8).map(|y| rsx!(
@@ -68,7 +73,8 @@ pub fn app(cx: Scope<()>) -> Element {
                                 button {
                                     style: twa![w_12, h_12, "font-size: 1.875rem;", cheat_highlighting(x,y)],
                                     onclick: move |_| chess_board.with_mut(|cb| cb.select(x,y)),
-                                    onmouseover: move |_| hovering.modify(|_| ndx(x, y)),
+                                    onmouseover: move |_| hovering.modify(|_| Some(ndx(x, y))),
+                                    onmouseout: move |_| hovering.modify(|_| None),
                                     [format_args!("{}", Chess::to_symbol(chess_board.chess.board()[x+(8*y)],' '))]
                                 }
                             }
