@@ -1,3 +1,5 @@
+use std::ops::Not;
+
 use Rank::*;
 use Side::*;
 
@@ -33,13 +35,19 @@ pub enum Side {
     Black,
 }
 
+impl Not for Side {
+    type Output = Self;
+    fn not(self) -> Self::Output {
+        match self {
+            White => Black,
+            Black => White,
+        }
+    }
+}
+
 impl Side {
     pub fn flip(&mut self) {
-        if *self == White {
-            *self = Black
-        } else {
-            *self = White
-        }
+        *self = !*self;
     }
 }
 

@@ -22,6 +22,15 @@ macro_rules! mdx {
         }
         ($x as usize + ($y as usize * 8))
     }};
+    ($x:expr, $y:expr, $t:ty) => {{
+        if $x > 7 {
+            panic!("x is too large: {}", $x);
+        }
+        if $y > 7 {
+            panic!("y is too large: {}", $y);
+        }
+        ($x as $t + ($y as $t * 8))
+    }};
 }
 pub(crate) use mdx;
 
@@ -32,3 +41,12 @@ macro_rules! fmdx {
     };
 }
 pub(crate) use fmdx;
+
+/// low <= x < high
+#[macro_export]
+macro_rules! in_range {
+    ($low:expr, $x:expr, $high:expr) => {
+        $low <= $x && $x < $high
+    };
+}
+pub(crate) use in_range;

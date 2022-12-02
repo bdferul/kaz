@@ -1,5 +1,5 @@
 use super::lib::*;
-use super::piece::{Rank::*, Side::*, P};
+use super::piece::{Rank::*, Side::{*, self}};
 use crate::chess::Chess;
 
 /**
@@ -42,25 +42,47 @@ impl Chess {
         let (possible, double_dst, en_passant) = self.possibilities(src);
 
         if possible.contains(&dst) {
-            self.check_en_passant(src, dst, double_dst, en_passant);
-            if self.board[src].unwrap().rank == Pawn || self.board[dst].is_some() {
-                self.halfmoves = 0;
+            let mut tmp_game = self.clone();
+            Self::move_unchecked(&mut tmp_game, src, dst, double_dst, en_passant);
+
+            //tmp_game.turn.flip();
+            if !tmp_game.in_check(self.turn) {
+                //tmp_game.turn.flip();
+                *self = tmp_game;
+                return Ok(());
             } else {
-                self.halfmoves += 1;
+                return Err(());
             }
-            self.board[dst] = self.board[src];
-            self.board[src] = None;
-            if self.turn == Black {
-                self.fullmoves += 1;
-            }
-            if !self.new_en_passant {
-                self.en_passant = None;
-            }
-            self.new_en_passant = false;
-            self.turn.flip();
-            return Ok(());
         }
         Err(())
+    }
+
+    /// moves the piece from src -> dst, updating all relevant fields, without checking anything
+    ///
+    /// THIS WILL NOT EVEN CHECK IF YOU ARE MOVING BLANK SQUARES
+    pub fn move_unchecked(
+        chess: &mut Chess,
+        src: usize,
+        dst: usize,
+        double_dst: Option<usize>,
+        en_passant: Option<usize>,
+    ) {
+        chess.check_en_passant(src, dst, double_dst, en_passant);
+        if chess.board[src].unwrap().rank == Pawn || chess.board[dst].is_some() {
+            chess.halfmoves = 0;
+        } else {
+            chess.halfmoves += 1;
+        }
+        chess.board[dst] = chess.board[src];
+        chess.board[src] = None;
+        if chess.turn == Black {
+            chess.fullmoves += 1;
+        }
+        if !chess.new_en_passant {
+            chess.en_passant = None;
+        }
+        chess.new_en_passant = false;
+        chess.turn.flip();
     }
 
     pub fn possibilities(&self, src: usize) -> (Vec<usize>, Option<usize>, Option<usize>) {
@@ -70,9 +92,9 @@ impl Chess {
                 Some(piece) => {
                     if piece.side == self.turn {
                         match piece.rank {
-                            King => vec![],  //todo
-                            Queen => vec![], //todo
-                            Rook => self.rook_possible(src),  //todo
+                            King => self.king_possible(src), //todo
+                            Queen => self.queen_possible(src),
+                            Rook => self.rook_possible(src),
                             Bishop => self.bishop_possible(src),
                             Knight => self.knight_possible(src),
                             Pawn => {
@@ -121,7 +143,7 @@ impl Chess {
                     && src_x + dir[0] >= 0
                     && src_y + dir[1] < 8
                     && src_y + dir[1] >= 0;
-                
+
                 if checking[i] {
                     let dst = mdx!(src_x + dir[0], src_y + dir[1]);
                     if let Some(p) = self.board[dst] {
@@ -134,9 +156,37 @@ impl Chess {
                     }
                 }
             }
+
+            if !checking.iter().any(|x| *x) {
+                break;
+            }
         }
 
         r
+    }
+
+    pub fn enemy_positions(&self) -> Vec<usize> {
+        (0..64)
+            .filter(|i| {
+                let Some(p) = self.board[*i] else {
+                return false;
+            };
+
+                p.side != self.turn
+            })
+            .collect()
+    }
+
+    pub fn friendly_positions(&self) -> Vec<usize> {
+        (0..64)
+            .filter(|i| {
+                let Some(p) = self.board[*i] else {
+                return false;
+            };
+
+                p.side == self.turn
+            })
+            .collect()
     }
 
     pub fn bishop_possible(&self, src: usize) -> Vec<usize> {
@@ -184,10 +234,14 @@ impl Chess {
             for (d, x, y) in cardinal {
                 if *d {
                     let ndx = mdx!(x, y);
-                    r.push(ndx);
                     //println!("{}: {:?}", line!(), (ndx, x, y, i));
-                    if self.board[ndx].is_some() {
+                    if let Some(p) = self.board[ndx] {
+                        if p.side != self.turn {
+                            r.push(ndx);
+                        }
                         *d = false;
+                    } else {
+                        r.push(ndx);
                     }
                 }
             }
@@ -211,25 +265,6 @@ impl Chess {
                 let (ep_x, _) = fndx(en_passant.unwrap());
                 self.board[mdx!(ep_x, src_y)];
             }
-        }
-    }
-
-    fn pawn(&mut self, src: usize, dst: usize) -> bool {
-        let (possible, double_dst, en_passant) = self.pawn_possible(src);
-        if possible.contains(&dst) {
-            if let Some(dd) = double_dst {
-                if dd == dst {
-                    self.en_passant = en_passant;
-                    self.new_en_passant = true;
-                    let (_, src_y) = fndx(src);
-                    let (ep_x, _) = fndx(en_passant.unwrap());
-                    self.board[mdx!(ep_x, src_y)];
-                }
-            }
-            self.halfmoves = 0;
-            true
-        } else {
-            false
         }
     }
 
@@ -329,11 +364,61 @@ impl Chess {
 
         for (a, x, y) in directions {
             if a {
-                r.push(mdx!(src_x + x, src_y + y));
+                r.push(mdx!(src_x + x, src_y + y, usize));
             }
         }
 
         r
+    }
+
+    pub fn queen_possible(&self, src: usize) -> Vec<usize> {
+        let mut r = vec![];
+
+        r.extend(self.bishop_possible(src));
+        r.extend(self.rook_possible(src));
+
+        r
+    }
+
+    pub fn king_possible(&self, src: usize) -> Vec<usize> {
+        let mut r = vec![];
+
+        let (src_x, src_y) = fmdx!(src, i32);
+
+        for y in -1..=1 {
+            for x in -1..=1 {
+                let (dst_x, dst_y) = (src_x + x, src_y + y);
+                if in_range!(0, dst_x, 8) && in_range!(0, dst_y, 8) {
+                    let ndx = mdx!(src_x + x, src_y + y);
+                    if ndx != src {
+                        if let Some(p) = self.board[ndx] {
+                            if p.side != self.turn {
+                                r.push(ndx);
+                            }
+                        } else {
+                            r.push(ndx)
+                        }
+                    }
+                }
+            }
+        }
+
+        r
+    }
+
+    fn in_check(&self, turn: Side) -> bool {
+        let mut enemy_board = self.clone();
+        enemy_board.turn.flip();
+        self.friendly_positions().into_iter().any(|i| {
+            println!("{}: {:?}", line!(),(i, self.possibilities(i).0, self.turn, turn));
+            self.possibilities(i).0.into_iter().any(|j| {
+                if let Some(p) = self.board[j] {
+                    p.side == turn && p.rank == King
+                } else {
+                    false
+                }
+            })
+        })
     }
 }
 
@@ -428,5 +513,11 @@ mod tests {
         assert!(bd.mv(16, 19).is_ok());
         assert!(bd.mv(4, 3).is_ok());
         assert!(bd.mv(19, 19 - 16).is_ok());
+    }
+
+    #[test]
+    fn in_check() {
+        let mut bd = Chess::from_fen("K1b58888888".to_string()).unwrap();
+        assert!(bd.mv(0, 9).is_err());
     }
 }
