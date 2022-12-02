@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use zetik::chess::{ndx, Chess, fndx};
+use zetik::{chess::{ndx, Chess, fndx}, mdx};
 use zetik_tailwind::{twa,tailwind::classes::*};
 
 #[derive(Default, Clone)]
@@ -13,12 +13,29 @@ pub fn app(cx: Scope<()>) -> Element {
     let chess_board = use_state(&cx, || ChessBoard::default());
     let hovering = use_state(&cx, || 0);
 
+    let cheat_highlighting = |x,y| {
+        let mut r = if (x+y) & 1 == 1 {
+            bg_fuchsia_300
+        } else {
+            bg_fuchsia_200
+        };
+        if chess_board.chess.rook_possible(**hovering).contains(&mdx!(x,y)) {
+            r = bg_amber_500;
+        }
+        if let Some(a) = chess_board.selection {
+            if chess_board.chess.possibilities(a).0.contains(&mdx!(x,y)) {
+                r = bg_green_500;
+            }
+        }
+        r
+    };
+
     cx.render(rsx!(
         div {
-            style: twa!(text_amber_500, top_0, left_0, absolute, w_full, h_full, p_3),
+            style: twa!(top_0, left_0, absolute, w_full, h_full, p_3, bg_stone_800, text_stone_300),
             p {[format_args!("{}", chess_board.chess.to_fen())]}
             p {[format_args!("En passant: {:?}", chess_board.chess.en_passant)]}
-            p {[format_args!("{hovering} : {:?}", fndx(**hovering))]}
+            p {[format_args!("Hover: {hovering} : {:?}", fndx(**hovering))]}
             p {[format_args!("Selected: {:?}", chess_board.selection)]}
             table {
                 style: twa![mx_auto, border, border_stone_800, text_yellow_100],
@@ -27,10 +44,10 @@ pub fn app(cx: Scope<()>) -> Element {
                         (0..8).map(|x| rsx!(
                             td {
                                 button {
-                                    style: twa![w_12, h_12, "font-size: 1.875rem;", if chess_board.chess.knight_possible(**hovering).contains(&ndx(x,y)) {"background-color: rgb(252 165 165);"} else { "" }],
+                                    style: twa![w_12, h_12, "font-size: 1.875rem;", cheat_highlighting(x,y)],
                                     onclick: move |_| chess_board.with_mut(|cb| cb.select(x,y)),
                                     onmouseover: move |_| hovering.modify(|_| ndx(x, y)),
-                                    [format_args!("{}", Chess::to_symbol(chess_board.chess.board()[x+(8*y)],'-'))]
+                                    [format_args!("{}", Chess::to_symbol(chess_board.chess.board()[x+(8*y)],' '))]
                                 }
                             }
                         ))
@@ -50,6 +67,20 @@ pub fn app(cx: Scope<()>) -> Element {
 
 impl ChessBoard {
     pub fn select(&mut self, x: usize, y: usize) {
+        let src = mdx!(x,y);
+        if let Some(a) = self.chess.board()[src] {
+            if a.side == self.chess.turn {
+                self.selection = Some(src);
+                return;
+            }
+        }
+
+        if let Some(a) = self.selection {
+            if self.chess.mv(a, src).is_err() {
+                self.log.push("invalid selection".to_string());
+            }
+        }
+        /*
         let pos = ndx(x, y);
         if let Some(parent) = self.selection {
             if self.chess.mv(parent, pos).is_err() {
@@ -61,5 +92,6 @@ impl ChessBoard {
                 self.selection = Some(pos)
             }
         }
+        */
     }
 }

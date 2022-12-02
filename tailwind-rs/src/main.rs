@@ -10,6 +10,11 @@ fn plain() {
     let mut out = String::new();
     for line in plain.split("\n") {
         let mut sides = line.split("\t").map(|s| s.to_string()).collect::<Vec<String>>();
+        if sides[..2].iter().any(|s| *s == String::new()) {
+            continue;
+        }
+        
+        println!("{:?}", sides);
         sides[0] = fix_var_name(&sides[0]);
         //println!("{}", output_format(&sides));
         out = [out,output_format(&sides)].join("\n").trim_start().to_string()

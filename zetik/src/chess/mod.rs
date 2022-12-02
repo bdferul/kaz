@@ -107,7 +107,7 @@ impl Chess {
     /// Returns `Chess::default()` but the board is `vec![None;64]`
     pub fn empty() -> Self {
         let mut chess = Chess::default();
-        chess.board = vec![NO;64];
+        chess.board = vec![NO; 64];
         chess
     }
 }

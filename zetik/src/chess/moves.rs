@@ -39,17 +39,10 @@ impl Chess {
             return Err(());
         }
 
-        if match self.board[src] {
-            Some(p) => match p.rank {
-                King => todo!(),
-                Queen => todo!(),
-                Rook => todo!(),
-                Bishop => self.bishop_possible(src).contains(&dst),
-                Knight => self.knight_possible(src).contains(&dst),
-                Pawn => self.pawn(src, dst),
-            },
-            None => return Err(()),
-        } {
+        let (possible, double_dst, en_passant) = self.possibilities(src);
+
+        if possible.contains(&dst) {
+            self.check_en_passant(src, dst, double_dst, en_passant);
             if self.board[src].unwrap().rank == Pawn || self.board[dst].is_some() {
                 self.halfmoves = 0;
             } else {
@@ -70,6 +63,41 @@ impl Chess {
         Err(())
     }
 
+    pub fn possibilities(&self, src: usize) -> (Vec<usize>, Option<usize>, Option<usize>) {
+        let mut tails = (None, None);
+        (
+            match self.board[src] {
+                Some(piece) => {
+                    if piece.side == self.turn {
+                        match piece.rank {
+                            King => vec![],  //todo
+                            Queen => vec![], //todo
+                            Rook => self.rook_possible(src),  //todo
+                            Bishop => self.bishop_possible(src),
+                            Knight => self.knight_possible(src),
+                            Pawn => {
+                                let p = self.pawn_possible(src);
+                                tails = (p.1, p.2);
+                                p.0
+                            }
+                        }
+                    } else {
+                        vec![]
+                    }
+                }
+                None => vec![],
+            }
+            .into_iter()
+            .filter(|x| match self.board[*x] {
+                Some(piece) => piece.side != self.turn,
+                None => true,
+            })
+            .collect(),
+            tails.0,
+            tails.1,
+        )
+    }
+
     pub fn capturable(&self, pos: usize) -> bool {
         let Some(p) = self.board[pos] else {
             return false;
@@ -78,12 +106,44 @@ impl Chess {
         p.side != self.turn
     }
 
+    pub fn rook_possible(&self, src: usize) -> Vec<usize> {
+        let mut r = vec![];
+        let (src_x, src_y) = fmdx!(src, i32);
+
+        let mut checking = [true; 4];
+
+        for i in 1..8 {
+            let directions = [[i, 0], [-i, 0], [0, i], [0, -i]];
+
+            for (i, dir) in directions.iter().enumerate() {
+                checking[i] = checking[i]
+                    && src_x + dir[0] < 8
+                    && src_x + dir[0] >= 0
+                    && src_y + dir[1] < 8
+                    && src_y + dir[1] >= 0;
+                
+                if checking[i] {
+                    let dst = mdx!(src_x + dir[0], src_y + dir[1]);
+                    if let Some(p) = self.board[dst] {
+                        checking[i] = false;
+                        if p.side != self.turn {
+                            r.push(dst);
+                        }
+                    } else {
+                        r.push(dst);
+                    }
+                }
+            }
+        }
+
+        r
+    }
+
     pub fn bishop_possible(&self, src: usize) -> Vec<usize> {
         let mut r = vec![];
         let (src_x, src_y) = fndx(src);
         let [mut is_ne, mut is_se, mut is_sw, mut is_nw] = [true; 4];
 
-        //Northeast
         for i in 1..8 {
             let ex = if src_x + i <= 7 {
                 src_x + i
@@ -125,7 +185,7 @@ impl Chess {
                 if *d {
                     let ndx = mdx!(x, y);
                     r.push(ndx);
-                    println!("{}: {:?}", line!(), (ndx, x, y, i));
+                    //println!("{}: {:?}", line!(), (ndx, x, y, i));
                     if self.board[ndx].is_some() {
                         *d = false;
                     }
@@ -136,6 +196,24 @@ impl Chess {
         r
     }
 
+    fn check_en_passant(
+        &mut self,
+        src: usize,
+        dst: usize,
+        double_dst: Option<usize>,
+        en_passant: Option<usize>,
+    ) {
+        if let Some(dd) = double_dst {
+            if dd == dst {
+                self.en_passant = en_passant;
+                self.new_en_passant = true;
+                let (_, src_y) = fndx(src);
+                let (ep_x, _) = fndx(en_passant.unwrap());
+                self.board[mdx!(ep_x, src_y)];
+            }
+        }
+    }
+
     fn pawn(&mut self, src: usize, dst: usize) -> bool {
         let (possible, double_dst, en_passant) = self.pawn_possible(src);
         if possible.contains(&dst) {
@@ -143,9 +221,9 @@ impl Chess {
                 if dd == dst {
                     self.en_passant = en_passant;
                     self.new_en_passant = true;
-                    let (_,src_y) = fndx(src);
+                    let (_, src_y) = fndx(src);
                     let (ep_x, _) = fndx(en_passant.unwrap());
-                    self.board[mdx!(ep_x,src_y)];
+                    self.board[mdx!(ep_x, src_y)];
                 }
             }
             self.halfmoves = 0;
@@ -225,7 +303,7 @@ impl Chess {
     pub fn knight_possible(&self, src: usize) -> Vec<usize> {
         let mut r = vec![];
 
-        let (src_x,src_y) = fmdx!(src, i32);
+        let (src_x, src_y) = fmdx!(src, i32);
 
         let up1 = src_y >= 1;
         let up2 = src_y >= 2;
@@ -237,15 +315,16 @@ impl Chess {
         let right1 = src_x >= 1;
 
         // goes clockwise starting at 1
-        let directions = [//directions
-            (left1 && up2, 1, -2),// 1:00
-            (left2 && up1, 2, -1),// 2:00
-            (left2 && down1, 2, 1),// 4:00
-            (left1 && down2, 1, 2),// 5:00
-            (right1 && down2, -1, 2),// 7:00
-            (right2 && down1, -2, 1),// 8:00
-            (right2 && up1, -2, -1),// 10:00
-            (right1 && up2, -1, -2),// 11:00
+        let directions = [
+            //directions
+            (left1 && up2, 1, -2),    // 1:00
+            (left2 && up1, 2, -1),    // 2:00
+            (left2 && down1, 2, 1),   // 4:00
+            (left1 && down2, 1, 2),   // 5:00
+            (right1 && down2, -1, 2), // 7:00
+            (right2 && down1, -2, 1), // 8:00
+            (right2 && up1, -2, -1),  // 10:00
+            (right1 && up2, -1, -2),  // 11:00
         ];
 
         for (a, x, y) in directions {
@@ -273,7 +352,11 @@ mod tests {
     fn simple_pawn_move() {
         let mut d = Chess::default();
         assert!(d.mv(ndx(2, 6), ndx(2, 5)).is_ok());
-        println!("{}\n{}", d.to_fen(),"rnbqkbnr/pppppppp/8/8/8/2P5/PP1PPPPP/RNBQKBNR b KQkq - 0 1");
+        println!(
+            "{}\n{}",
+            d.to_fen(),
+            "rnbqkbnr/pppppppp/8/8/8/2P5/PP1PPPPP/RNBQKBNR b KQkq - 0 1"
+        );
         assert_eq!(
             d.to_fen(),
             "rnbqkbnr/pppppppp/8/8/8/2P5/PP1PPPPP/RNBQKBNR b KQkq - 0 1"
@@ -332,8 +415,18 @@ mod tests {
     #[test]
     fn knight() {
         let mut bd = Chess::default();
-        assert!(bd.mv(57,42).is_ok());
-        assert!(bd.mv(6,23).is_ok());
-        assert!(bd.mv(62,52).is_err());
+        assert!(bd.mv(57, 42).is_ok());
+        assert!(bd.mv(6, 23).is_ok());
+        assert!(bd.mv(62, 52).is_err());
+    }
+
+    #[test]
+    fn rook() {
+        let mut bd = Chess::from_fen("R6r/8/8/8/8/8/8/8".to_string()).unwrap();
+        assert!(bd.mv(0, 16).is_ok());
+        assert!(bd.mv(7, 4).is_ok());
+        assert!(bd.mv(16, 19).is_ok());
+        assert!(bd.mv(4, 3).is_ok());
+        assert!(bd.mv(19, 19 - 16).is_ok());
     }
 }
