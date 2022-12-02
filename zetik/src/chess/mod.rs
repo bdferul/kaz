@@ -1,8 +1,13 @@
 mod fen;
 mod lib;
 mod moves;
-
+mod piece;
 pub use lib::*;
+
+use piece::{
+    Side::{self, *},
+    *,
+};
 use std::fmt::Debug;
 
 /**
@@ -17,9 +22,9 @@ Features
 #[derive(Debug, Clone)]
 pub struct Chess {
     /// 64 long with black on top
-    board: Vec<u8>,
+    board: Vec<P>,
     /// true for white, false for black
-    pub turn: bool,
+    pub turn: Side,
     /// The index of a square that is capturable via en passant
     ///
     /// May need to change in the future
@@ -41,12 +46,12 @@ pub struct Chess {
 
 impl Chess {
     /// Clone of the internal board vector
-    pub fn board(&self) -> Vec<u8> {
+    pub fn board(&self) -> Vec<P> {
         self.board.clone()
     }
 
     /// Mutable reference to the internal board vector
-    pub fn board_mut(&mut self) -> &mut Vec<u8> {
+    pub fn board_mut(&mut self) -> &mut Vec<P> {
         &mut self.board
     }
     /**
@@ -68,9 +73,9 @@ impl Chess {
      * 10: ♞
      * 11: ♟︎
      */
-    pub fn to_symbol(a: u8, whitespace: char) -> char {
-        if a < 12 {
-            char::from_u32(0x2654 + a as u32).unwrap_or_default()
+    pub fn to_symbol(a: P, whitespace: char) -> char {
+        if let Some(x) = a {
+            char::from_u32(0x2654 + x.value() as u32).unwrap_or_default()
         } else {
             whitespace
         }
@@ -86,18 +91,24 @@ impl Chess {
     ♖ ♘ ♗ ♕ ♔ ♗ ♘ ♖
      */
     pub fn pretty_print(&self) {
-        let ts = Self::to_symbol;
         for y in 0..8 {
             for x in 0..8 {
-                print!("{} ", ts(self.board[ndx(x, y)], '-'));
+                print!("{} ", Self::to_symbol(self.board[ndx(x, y)], '-'));
             }
             println!();
         }
     }
 
     /// Returns the value of the piece located at the given coordinates
-    pub fn sqr(&self, x: usize, y: usize) -> u8 {
+    pub fn sqr(&self, x: usize, y: usize) -> P {
         self.board[ndx(x, y)]
+    }
+
+    /// Returns `Chess::default()` but the board is `vec![None;64]`
+    pub fn empty() -> Self {
+        let mut chess = Chess::default();
+        chess.board = vec![NO;64];
+        chess
     }
 }
 
@@ -107,36 +118,21 @@ impl Default for Chess {
     fn default() -> Self {
         Chess {
             board: vec![
-                08, 10, 09, 07, 06, 09, 10, 08,
-                11, 11, 11, 11, 11, 11, 11, 11,
-                12, 12, 12, 12, 12, 12, 12, 12,
-                12, 12, 12, 12, 12, 12, 12, 12,
-                12, 12, 12, 12, 12, 12, 12, 12,
-                12, 12, 12, 12, 12, 12, 12, 12,
-                05, 05, 05, 05, 05, 05, 05, 05,
-                02, 04, 03, 01, 00, 03, 04, 02,
+                BR,BN,BB,BQ,BK,BB,BN,BR,
+                BP,BP,BP,BP,BP,BP,BP,BP,
+                NO,NO,NO,NO,NO,NO,NO,NO,
+                NO,NO,NO,NO,NO,NO,NO,NO,
+                NO,NO,NO,NO,NO,NO,NO,NO,
+                NO,NO,NO,NO,NO,NO,NO,NO,
+                WP,WP,WP,WP,WP,WP,WP,WP,
+                WR,WN,WB,WQ,WK,WB,WN,WR,
             ],
-            turn: true,
+            turn: White,
             en_passant: None,
             new_en_passant: false,
             castle: [true;4],
             halfmoves: 0,
             fullmoves: 1,
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Chess;
-
-    #[test]
-    fn board_mut() {
-        let mut chess = Chess::default();
-        {
-            let b = chess.board_mut();
-            *b = Chess::from_fen_pieces(&"8/1b6/8/8/8/8/6B1/8".to_string()).unwrap();
-        }
-        assert_eq!(chess.board()[9], 9);
     }
 }

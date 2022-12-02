@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use zetik::chess::{ndx, Chess};
+use zetik::chess::{ndx, Chess, fndx};
 use zetik_tailwind::{twa,tailwind::classes::*};
 
 #[derive(Default, Clone)]
@@ -17,8 +17,8 @@ pub fn app(cx: Scope<()>) -> Element {
         div {
             style: twa!(text_amber_500, top_0, left_0, absolute, w_full, h_full, p_3),
             p {[format_args!("{}", chess_board.chess.to_fen())]}
-            p {[format_args!("{:?},{:?}", chess_board.chess.en_passant,Chess::from_fen(chess_board.chess.to_fen()).unwrap().en_passant)]}
-            p {"{hovering}"}
+            p {[format_args!("En passant: {:?}", chess_board.chess.en_passant)]}
+            p {[format_args!("{hovering} : {:?}", fndx(**hovering))]}
             p {[format_args!("Selected: {:?}", chess_board.selection)]}
             table {
                 style: twa![mx_auto, border, border_stone_800, text_yellow_100],
@@ -27,7 +27,7 @@ pub fn app(cx: Scope<()>) -> Element {
                         (0..8).map(|x| rsx!(
                             td {
                                 button {
-                                    style: twa![w_12, h_12, "font-size: 1.875rem;", if chess_board.chess.bishop_possible(**hovering).contains(&ndx(x,y)) {"background-color: rgb(252 165 165);"} else { "" }],
+                                    style: twa![w_12, h_12, "font-size: 1.875rem;", if chess_board.chess.knight_possible(**hovering).contains(&ndx(x,y)) {"background-color: rgb(252 165 165);"} else { "" }],
                                     onclick: move |_| chess_board.with_mut(|cb| cb.select(x,y)),
                                     onmouseover: move |_| hovering.modify(|_| ndx(x, y)),
                                     [format_args!("{}", Chess::to_symbol(chess_board.chess.board()[x+(8*y)],'-'))]
@@ -40,7 +40,7 @@ pub fn app(cx: Scope<()>) -> Element {
             div {
                 class: "log",
                 chess_board.log.iter().enumerate().map(|(i,msg)| rsx!(
-                    "{i}: {msg}" ,
+                    "{i}: {msg}",
                     br {}
                 ))
             }
@@ -57,7 +57,7 @@ impl ChessBoard {
             }
             self.selection = None;
         } else {
-            if self.chess.board()[pos] != 12 {
+            if self.chess.board()[pos].is_some() {
                 self.selection = Some(pos)
             }
         }

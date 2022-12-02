@@ -7,22 +7,28 @@ pub fn fndx(p: usize) -> (usize, usize) {
 }
 
 /// use like `mdx!(x: int, y: int)`
-/// 
+///
 /// returns usize
-/// 
+///
 /// this is beautiful
 #[macro_export]
 macro_rules! mdx {
-    ($x:expr, $y:expr) => {
-        {
-            if $x > 7 {
-                panic!("x is too large");
-            }
-            if $y > 7 {
-                panic!("x is too large");
-            }
-            ($x + ($y * 8)) as usize
+    ($x:expr, $y:expr) => {{
+        if $x > 7 {
+            panic!("x is too large: {}", $x);
         }
-    };
+        if $y > 7 {
+            panic!("y is too large: {}", $y);
+        }
+        ($x as usize + ($y as usize * 8))
+    }};
 }
 pub(crate) use mdx;
+
+#[macro_export]
+macro_rules! fmdx {
+    ($x:expr, $t:ty) => {
+        ($x as $t % 8, $x as $t / 8)
+    };
+}
+pub(crate) use fmdx;

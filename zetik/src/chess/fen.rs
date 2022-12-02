@@ -1,16 +1,19 @@
-use super::lib::*;
+use super::{
+    lib::*,
+    piece::{self, Piece, Side::*},
+};
 use crate::chess::Chess;
 
 impl Chess {
     /// Returns the FEN char interpretation of the u8 piece value
-    fn fencode(a: u8) -> Option<char> {
-        if a >= 12 {
-            return None;
-        }
+    fn fencode(a: Option<Piece>) -> Option<char> {
+        let Some(a) = a else {
+            return None
+        };
 
         let codes = ['K', 'Q', 'R', 'B', 'N', 'P', 'k', 'q', 'r', 'b', 'n', 'p'];
 
-        Some(codes[a as usize])
+        Some(codes[a.value()])
     }
 
     /// Returns the internal value of a piece based on the provided FEN char
@@ -110,7 +113,7 @@ impl Chess {
     pub fn to_fen(&self) -> String {
         let mut r = self.to_fen_pieces();
 
-        let t = if self.turn { 'w' } else { 'b' };
+        let t = if self.turn == White { 'w' } else { 'b' };
 
         let e = if let Some(ep) = self.en_passant {
             Self::fen_pos(ep).unwrap()
@@ -135,7 +138,7 @@ impl Chess {
     }
 
     /// Returns a vector inferred by the first part of a FEN string
-    pub fn from_fen_pieces(s: &String) -> Result<Vec<u8>, &'static str> {
+    pub fn from_fen_pieces(s: &String) -> Result<Vec<Option<Piece>>, &'static str> {
         let mut board = vec![];
         for c in s.chars() {
             if board.len() < 64 {
@@ -145,7 +148,7 @@ impl Chess {
                         return e;
                     }
                     for _ in 0..d {
-                        board.push(12);
+                        board.push(piece::NO);
                     }
                     continue;
                 }
@@ -159,7 +162,7 @@ impl Chess {
                 }
 
                 if let Some(p) = Self::defencode(c) {
-                    board.push(p as u8);
+                    board.push(Piece::fen_ndx(p));
                 } else {
                     return e;
                 }
@@ -183,8 +186,8 @@ impl Chess {
         //turn
         if items.len() > 1 {
             r.turn = match &items[1][..] {
-                "w" => true,
-                "b" => false,
+                "w" => White,
+                "b" => Black,
                 _ => return Err("unable to parse turn"),
             }
         }
