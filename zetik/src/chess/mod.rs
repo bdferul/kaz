@@ -3,9 +3,9 @@ mod lib;
 mod moves;
 mod notation;
 mod piece;
-mod ai;
+//mod ai;
 
-pub use ai::Ai;
+//pub use ai::Ai;
 pub use lib::*;
 
 use piece::{

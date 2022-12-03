@@ -5,12 +5,14 @@ use super::piece::{
 };
 use crate::chess::Chess;
 
+#[allow(dead_code)]
 pub struct Choice {
     pub src: usize,
     pub dst: usize,
 }
 
 impl Choice {
+    #[allow(dead_code)]
     pub fn new(src: usize, dst: usize) -> Choice {
         Choice { src, dst }
     }

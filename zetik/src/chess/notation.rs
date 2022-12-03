@@ -1,13 +1,8 @@
 use super::piece::{Class::*, Piece};
 use crate::{
-    chess::{fndx, Chess},
-    fmdx, in_range, mdx,
+    chess::{fndx, Chess},mdx,
 };
 
-enum Choice<T> {
-    Some(T),
-    Null,
-}
 
 impl Chess {
     pub fn to_std_notation(&self, src: usize, dst: usize) -> Option<String> {
