@@ -1,4 +1,4 @@
-use dioxus::{prelude::*, events::onmouseleave};
+use dioxus::{prelude::*, events::{onmouseleave, onkeyup, KeyCode}};
 use zetik::{chess::{ndx, Chess, fndx}, mdx};
 use zetik_tailwind::{twa,tailwind::classes::*};
 
@@ -14,22 +14,23 @@ pub fn app(cx: Scope<()>) -> Element {
     let hovering = use_state(&cx, || None);
     let input_fen = use_state(&cx, || String::new());
     let input_fen_error = use_state(&cx, || String::new());
+    let input_std_note = use_state(&cx, || String::new());
 
-    let cheat_highlighting = |x,y| {
+    let cheat_highlighting = |x: usize,y: usize| {
         let mut r = if (x+y) & 1 == 1 {
             bg_fuchsia_300
         } else {
             bg_fuchsia_200
         };
         if let Some(h) = **hovering {
-            if chess_board.chess.possibilities(h).0.contains(&mdx!(x,y)) {
+            if chess_board.chess.choices(h).0.contains(&mdx!(x,y)) {
             //if chess_board.chess.king_possible(**hovering).contains(&mdx!(x,y)) {
                 r = bg_amber_500;
             }
         }
         
         if let Some(a) = chess_board.selection {
-            if chess_board.chess.possibilities(a).0.contains(&mdx!(x,y)) {
+            if chess_board.chess.choices(a).0.contains(&mdx!(x,y)) {
                 r = bg_green_500;
             }
         }
@@ -59,32 +60,56 @@ pub fn app(cx: Scope<()>) -> Element {
             }
             "{input_fen_error}"
             p {[format_args!("En passant: {:?}", chess_board.chess.en_passant)]}
-            p {[format_args!("Hover: {hovering:?} : {:?}", if let Some(h) = **hovering {Some(fndx(h))} else {None})]}
+            p {[format_args!("Hover: {hovering:?} : {:?}", if let Some(h) = **hovering {Some((fndx(h), Chess::fen_pos(h).unwrap()))} else {None})]}
             p {[format_args!("Selected: {:?}", chess_board.selection)]}
             p {[format_args!("Check: {:?}", chess_board.chess.check)]}
             p {[format_args!("Checkmate: {}", chess_board.chess.checkmate)]}
             p {[format_args!("Stalemate: {}", chess_board.chess.stalemate)]}
-            table {
-                style: twa![mx_auto, border, border_stone_800, text_yellow_100],
-                (0..8).map(|y| rsx!(
-                    tr {
-                        (0..8).map(|x| rsx!(
-                            td {
-                                button {
-                                    style: twa![w_12, h_12, "font-size: 1.875rem;", cheat_highlighting(x,y)],
-                                    onclick: move |_| chess_board.with_mut(|cb| cb.select(x,y)),
-                                    onmouseover: move |_| hovering.modify(|_| Some(ndx(x, y))),
-                                    onmouseout: move |_| hovering.modify(|_| None),
-                                    [format_args!("{}", Chess::to_symbol(chess_board.chess.board()[x+(8*y)],' '))]
+            div {
+                style: twa![mx_auto, flex, h_min],
+                table {
+                    style: twa![border, border_stone_800, text_yellow_100, h_min],
+                    (0..8).map(|y| rsx!(
+                        tr {
+                            (0..8).map(|x| rsx!(
+                                td {
+                                    button {
+                                        style: twa![w_12, h_12, "font-size: 1.875rem;", cheat_highlighting(x,y)],
+                                        onclick: move |_| chess_board.with_mut(|cb| cb.select(x,y)),
+                                        onmouseover: move |_| hovering.modify(|_| Some(ndx(x, y))),
+                                        onmouseout: move |_| hovering.modify(|_| None),
+                                        [format_args!("{}", Chess::to_symbol(chess_board.chess.board()[x+(8*y)],' '))]
+                                    }
                                 }
+                            ))
+                        }
+                    ))
+                }
+                    div {
+                    style: twa![overflow_y_scroll, h_auto],
+                    "Input move"
+                    input {
+                        value: "{input_std_note}",
+                        oninput: move |evt| input_std_note.set(evt.value.clone()),
+                        onkeyup: move |evt| {
+                            if evt.key_code == KeyCode::Enter {
+                                chess_board.with_mut(|cb| {cb.chess.mv_str(input_std_note.clone().to_string());});
+                                input_std_note.set(String::new());
                             }
-                        ))
+                        },
                     }
-                ))
+                    br {}
+                    //style: twa![h_full],
+                    chess_board.chess.move_log.iter().enumerate().map(|(i,msg)| rsx!(
+                        "{i}: {msg}",
+                        br {}
+                    ))
+                }
+                
             }
             div {
                 class: "log",
-                chess_board.log.iter().enumerate().map(|(i,msg)| rsx!(
+                chess_board.chess.all_choices_note().iter().enumerate().map(|(i,msg)| rsx!(
                     "{i}: {msg}",
                     br {}
                 ))

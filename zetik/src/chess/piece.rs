@@ -1,6 +1,6 @@
 use std::ops::Not;
 
-use Rank::*;
+use Class::*;
 use Side::*;
 
 pub type P = Option<Piece>;
@@ -20,7 +20,7 @@ pub const NO: P = None;
 const ORDER: [P; 12] = [WK, WQ, WR, WB, WN, WP, BK, BQ, BR, BB, BN, BP];
 
 #[derive(Debug, Clone, PartialEq, Copy)]
-pub enum Rank {
+pub enum Class {
     King,
     Queen,
     Bishop,
@@ -54,12 +54,12 @@ impl Side {
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub struct Piece {
     pub side: Side,
-    pub rank: Rank,
+    pub class: Class,
 }
 
 impl Piece {
-    pub const fn from(side: Side, rank: Rank) -> Piece {
-        Piece { side, rank }
+    pub const fn from(side: Side, rank: Class) -> Piece {
+        Piece { side, class: rank }
     }
 
     pub fn value(&self) -> usize {

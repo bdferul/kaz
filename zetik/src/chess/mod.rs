@@ -1,7 +1,11 @@
 mod fen;
 mod lib;
 mod moves;
+mod notation;
 mod piece;
+mod ai;
+
+pub use ai::Ai;
 pub use lib::*;
 
 use piece::{
@@ -46,6 +50,7 @@ pub struct Chess {
     pub check: Option<Side>,
     pub checkmate: bool,
     pub stalemate: bool,
+    pub move_log: Vec<String>,
 }
 
 impl Chess {
@@ -149,6 +154,7 @@ impl Default for Chess {
             check: None,
             checkmate: false,
             stalemate: false,
+            move_log: vec![],
         }
     }
 }
