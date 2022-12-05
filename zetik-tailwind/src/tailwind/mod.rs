@@ -40,9 +40,3 @@ macro_rules! twa {
 pub(crate) use tw;
 #[allow(unused)]
 pub(crate) use twa;
-
-
-pub fn tw_test() -> String {
-    use classes::*;
-    tw![w_3, h_4]
-}

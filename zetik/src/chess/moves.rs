@@ -1,22 +1,10 @@
 use super::lib::*;
+use super::piece::*;
 use super::piece::{
     Class::*,
     Side::{self, *},
 };
 use crate::chess::Chess;
-
-#[allow(dead_code)]
-pub struct Choice {
-    pub src: usize,
-    pub dst: usize,
-}
-
-impl Choice {
-    #[allow(dead_code)]
-    pub fn new(src: usize, dst: usize) -> Choice {
-        Choice { src, dst }
-    }
-}
 
 /**
 White
@@ -55,8 +43,13 @@ impl Chess {
             return Err(());
         }
 
-        let (possible, double_dst, en_passant) = self.unchecked_possibilities(src);
+        if let Some(src_p) = self.board[src] {
+            if src_p.class == King {
+                self.if_castle_move_rooks(src, dst)
+            }
+        }
 
+        let (possible, double_dst, en_passant) = self.base_choices(src);
         if possible.contains(&dst) {
             let mut tmp_game = self.clone();
             Self::move_unchecked(&mut tmp_game, src, dst, double_dst, en_passant);
@@ -65,7 +58,6 @@ impl Chess {
             if !tmp_game.in_check(self.turn) {
                 //tmp_game.turn.flip();
                 self.log(src, dst);
-                println!("{:?}", self.move_log);
                 let log = self.move_log.clone();
                 *self = tmp_game;
                 self.move_log = log;
@@ -79,6 +71,20 @@ impl Chess {
             }
         }
         Err(())
+    }
+    /// Returns positions available for castling
+    fn castle_choices(&self) {
+        let srcs = [60, 4]; // [K,k]
+        let dsts = [62, 58, 6, 2]; // [K,Q,k,q]
+                                   //let iter = self.castle.iter().zip(dsts.into_iter()).filter(|(a,_)| **a);
+
+        let s = 4;
+        let d = 6;
+
+        if self.castle[2] {
+            let king = self.board[s].unwrap();
+            let rook = self.board[d].unwrap();
+        }
     }
 
     pub fn set_check(&mut self) {
@@ -128,6 +134,20 @@ impl Chess {
             .all(|f| self.choices(*f).0.len() == 0)
     }
 
+    fn if_castle_move_rooks(&mut self, src: usize, dst: usize) {
+        if matches!(src, 4 | 60) {
+            let a = src - 2;
+            let b = src + 2;
+            if dst == a {
+                self.board[a + 1] = self.board[a - 2];
+                self.board[a - 2] = NO;
+            } else if dst == b {
+                self.board[b - 1] = self.board[b + 1];
+                self.board[b + 1] = NO;
+            }
+        }
+    }
+
     /// moves the piece from src -> dst, updating all relevant fields, without checking anything
     ///
     /// THIS WILL NOT EVEN CHECK IF YOU ARE MOVING BLANK SQUARES
@@ -138,8 +158,31 @@ impl Chess {
         double_dst: Option<usize>,
         en_passant: Option<usize>,
     ) {
+        let src_piece = chess.board[src].unwrap();
+        if src_piece.class == King {
+            match src_piece.side {
+                White => {
+                    chess.castle[0] = false;
+                    chess.castle[1] = false;
+                }
+                Black => {
+                    chess.castle[2] = false;
+                    chess.castle[3] = false;
+                }
+            }
+            chess.if_castle_move_rooks(src, dst);
+        }
+        if src_piece.class == Rook {
+            match src {
+                0 => chess.castle[3] = false,
+                7 => chess.castle[2] = false,
+                56 => chess.castle[1] = false,
+                63 => chess.castle[0] = false,
+                _ => (),
+            };
+        }
         chess.check_en_passant(src, dst, double_dst, en_passant);
-        if chess.board[src].unwrap().class == Pawn || chess.board[dst].is_some() {
+        if src_piece.class == Pawn || chess.board[dst].is_some() {
             chess.halfmoves = 0;
         } else {
             chess.halfmoves += 1;
@@ -157,7 +200,7 @@ impl Chess {
     }
 
     pub fn choices(&self, src: usize) -> (Vec<usize>, Option<usize>, Option<usize>) {
-        let (a, b, c) = self.unchecked_possibilities(src);
+        let (a, b, c) = self.base_choices(src);
 
         (
             a.into_iter()
@@ -172,41 +215,6 @@ impl Chess {
         )
     }
 
-    fn unchecked_possibilities(&self, src: usize) -> (Vec<usize>, Option<usize>, Option<usize>) {
-        let mut tails = (None, None);
-        (
-            match self.board[src] {
-                Some(piece) => {
-                    if piece.side == self.turn {
-                        match piece.class {
-                            King => self.king_possible(src), //todo
-                            Queen => self.queen_possible(src),
-                            Rook => self.rook_possible(src),
-                            Bishop => self.bishop_possible(src),
-                            Knight => self.knight_possible(src),
-                            Pawn => {
-                                let p = self.pawn_possible(src);
-                                tails = (p.1, p.2);
-                                p.0
-                            }
-                        }
-                    } else {
-                        vec![]
-                    }
-                }
-                None => vec![],
-            }
-            .into_iter()
-            .filter(|x| match self.board[*x] {
-                Some(piece) => piece.side != self.turn,
-                None => true,
-            })
-            .collect(),
-            tails.0,
-            tails.1,
-        )
-    }
-
     pub fn capturable(&self, pos: usize) -> bool {
         let Some(p) = self.board[pos] else {
             return false;
@@ -214,44 +222,7 @@ impl Chess {
 
         p.side != self.turn
     }
-
-    pub fn rook_possible(&self, src: usize) -> Vec<usize> {
-        let mut r = vec![];
-        let (src_x, src_y) = fmdx!(src, i32);
-
-        let mut checking = [true; 4];
-
-        for i in 1..8 {
-            let directions = [[i, 0], [-i, 0], [0, i], [0, -i]];
-
-            for (i, dir) in directions.iter().enumerate() {
-                checking[i] = checking[i]
-                    && src_x + dir[0] < 8
-                    && src_x + dir[0] >= 0
-                    && src_y + dir[1] < 8
-                    && src_y + dir[1] >= 0;
-
-                if checking[i] {
-                    let dst = mdx!(src_x + dir[0], src_y + dir[1]);
-                    if let Some(p) = self.board[dst] {
-                        checking[i] = false;
-                        if p.side != self.turn {
-                            r.push(dst);
-                        }
-                    } else {
-                        r.push(dst);
-                    }
-                }
-            }
-
-            if !checking.iter().any(|x| *x) {
-                break;
-            }
-        }
-
-        r
-    }
-
+    /// Returns a vector of the positions of every enemy
     pub fn enemy_positions(&self) -> Vec<usize> {
         (0..64)
             .filter(|i| {
@@ -276,67 +247,6 @@ impl Chess {
             .collect()
     }
 
-    pub fn bishop_possible(&self, src: usize) -> Vec<usize> {
-        let mut r = vec![];
-        let (src_x, src_y) = fndx(src);
-        let [mut is_ne, mut is_se, mut is_sw, mut is_nw] = [true; 4];
-
-        for i in 1..8 {
-            let ex = if src_x + i <= 7 {
-                src_x + i
-            } else {
-                is_ne = false;
-                is_se = false;
-                0
-            };
-            let wx = if i <= src_x {
-                src_x - i
-            } else {
-                is_sw = false;
-                is_nw = false;
-                0
-            };
-            let sy = if src_y + i <= 7 {
-                src_y + i
-            } else {
-                is_sw = false;
-                is_se = false;
-                0
-            };
-            let ny = if i <= src_y {
-                src_y - i
-            } else {
-                is_nw = false;
-                is_ne = false;
-                0
-            };
-
-            let cardinal = [
-                (&mut is_ne, ex, ny),
-                (&mut is_se, ex, sy),
-                (&mut is_sw, wx, sy),
-                (&mut is_nw, wx, ny),
-            ];
-
-            for (d, x, y) in cardinal {
-                if *d {
-                    let ndx = mdx!(x, y);
-                    //println!("{}: {:?}", line!(), (ndx, x, y, i));
-                    if let Some(p) = self.board[ndx] {
-                        if p.side != self.turn {
-                            r.push(ndx);
-                        }
-                        *d = false;
-                    } else {
-                        r.push(ndx);
-                    }
-                }
-            }
-        }
-
-        r
-    }
-
     fn check_en_passant(
         &mut self,
         src: usize,
@@ -355,15 +265,18 @@ impl Chess {
         }
     }
 
-    pub fn all_choices(&self) -> Vec<(usize,usize)> {
-        (0..self.board.len()).map(|i| (i,self.choices(i).0)).filter(|(_,x)| x.len() > 0).fold(vec![], |mut acc, (src,dsts)| {
-            acc.extend(dsts.iter().map(|dst| (src,*dst)));
-            acc
-        })
+    pub fn all_choices(&self) -> Vec<(usize, usize)> {
+        (0..self.board.len())
+            .map(|i| (i, self.choices(i).0))
+            .filter(|(_, x)| x.len() > 0)
+            .fold(vec![], |mut acc, (src, dsts)| {
+                acc.extend(dsts.iter().map(|dst| (src, *dst)));
+                acc
+            })
     }
 
     /// returns a vector of possibilities
-    pub fn pawn_possible(&self, src: usize) -> (Vec<usize>, Option<usize>, Option<usize>) {
+    pub fn pawn_choices(&self, src: usize) -> (Vec<usize>, Option<usize>, Option<usize>) {
         let mut r = vec![];
         let mut double_dst = None;
         let mut en_passant = None;
@@ -429,7 +342,7 @@ impl Chess {
         (r, double_dst, en_passant)
     }
 
-    pub fn knight_possible(&self, src: usize) -> Vec<usize> {
+    pub fn knight_choices(&self, src: usize) -> Vec<usize> {
         let mut r = vec![];
 
         let (src_x, src_y) = fmdx!(src, i32);
@@ -465,16 +378,17 @@ impl Chess {
         r
     }
 
-    pub fn queen_possible(&self, src: usize) -> Vec<usize> {
+    pub fn queen_choices(&self, src: usize) -> Vec<usize> {
         let mut r = vec![];
 
-        r.extend(self.bishop_possible(src));
-        r.extend(self.rook_possible(src));
+        r.extend(self.bishop_choices(src));
+        r.extend(self.rook_choices(src));
 
         r
     }
 
-    pub fn king_possible(&self, src: usize) -> Vec<usize> {
+    /// Returns only basic king choices. Does not include castling
+    pub fn king_choices(&self, src: usize) -> Vec<usize> {
         let mut r = vec![];
 
         let (src_x, src_y) = fmdx!(src, i32);
@@ -496,8 +410,73 @@ impl Chess {
                 }
             }
         }
+        /*
+        if let Some(king) = self.board[src] {
+            //pln!("{r:?}, {king:?}");
+            if self.check != Some(king.side) {
+                let castle_dsts = [62, 58, 6, 2]
+                    .into_iter()
+                    .enumerate()
+                    .filter(|(i, _)| self.castle[*i])
+                    .filter(|(_, x)| self.board[*x].is_none())
+                    .filter(|(i, _)| {
+                        (king.side == White && *i < 2) || (king.side == Black && *i >= 2)
+                    })
+                    .filter(|(i, _)| {
+                        let tmp_dst = match *i {
+                            0 => 61,
+                            1 => 59,
+                            2 => 5,
+                            3 => 3,
+                            _ => 64,
+                        };
+                        if tmp_dst == 59 {
+                            //pln!("{}", self.is_dangerous(tmp_dst));
+                        }
+                        !self.is_dangerous(tmp_dst)
+                    })
+                    .map(|(_, x)| x)
+                    .collect::<Vec<usize>>();
+                r.extend(castle_dsts);
+            }
+        }*/
 
         r
+    }
+
+    /// Returns the basic choices available to the selected piece, independent of turn
+    pub fn basic_choices(&self, src: usize) -> Vec<usize> {
+        let Some(src_p) = self.board[src] else {
+            return vec![]
+        };
+
+        let mut tmp = self.clone();
+        tmp.turn = src_p.side;
+
+        match src_p.class {
+            King => tmp.king_choices(src),
+            Queen => tmp.queen_choices(src),
+            Bishop => tmp.bishop_choices(src),
+            Knight => tmp.bishop_choices(src),
+            Rook => tmp.rook_choices(src),
+            _ => todo!(),
+        }
+    }
+
+    /// Returns true if the enemy can capture that square
+    pub fn is_dangerous(&self, dst: usize) -> bool {
+        let enemies = self.enemy_positions();
+        //pln!("{:?}", enemies);
+        let mut tmp = self.clone();
+        tmp.turn.flip();
+        let reds = enemies
+            .into_iter()
+            .map(|x| tmp.base_choices(x).0)
+            .fold(vec![], |mut acc, x| {
+                acc.extend(x);
+                acc
+            });
+        reds.contains(&dst)
     }
 
     /// Checks if the given turn is in check
@@ -519,7 +498,7 @@ impl Chess {
             .collect();
 
         enemies.into_iter().any(|enemy| {
-            let ebu = enemy_board.unchecked_possibilities(enemy).0;
+            let ebu = enemy_board.base_choices(enemy).0;
             ebu.into_iter().any(|e_move| {
                 if let Some(p) = self.board[e_move] {
                     p.side == turn && p.class == King
@@ -528,27 +507,16 @@ impl Chess {
                 }
             })
         })
-
-        /*
-        let mut enemy_board = self.clone();
-        enemy_board.turn.flip();
-        self.friendly_positions().into_iter().any(|i| {
-            println!("{}: {:?}", line!(),(i, self.unchecked_possibilities(i).0, self.turn, turn));
-            self.unchecked_possibilities(i).0.into_iter().any(|j| {
-                if let Some(p) = self.board[j] {
-                    p.side == turn && p.rank == King
-                } else {
-                    false
-                }
-            })
-        })
-        */
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{chess::lib::ndx, chess::piece::Side::*, chess::Chess};
+    use crate::{
+        chess::piece::Side::*,
+        chess::Chess,
+        chess::{lib::ndx, pln},
+    };
 
     #[test]
     fn wrong_color_turn() {
@@ -627,6 +595,30 @@ mod tests {
         assert!(bd.mv(57, 42).is_ok());
         assert!(bd.mv(6, 23).is_ok());
         assert!(bd.mv(62, 52).is_err());
+    }
+
+    #[test]
+    fn castle() {
+        let mut bd = Chess::from_fen("r3k2rpppppppp8888PPPPPPPPR3K2R".to_string()).unwrap();
+        assert!(bd.mv(60, 62).is_ok());
+        pln!("{}", bd.to_fen());
+        assert!(bd.mv(4, 6).is_ok());
+
+        let mut bd = Chess::from_fen("r3k2rpppppppp8888PPPPPPPPR3K2R".to_string()).unwrap();
+        assert!(bd.mv(60, 58).is_ok());
+        pln!("{}", bd.to_fen());
+        assert!(bd.mv(4, 2).is_ok());
+
+        let mut bd = Chess::from_fen("r3k2rpppppppp8888PPPrPPPPR3K2R".to_string()).unwrap();
+        pln!("{}", bd.is_dangerous(59));
+        assert!(bd.mv(60, 58).is_err());
+    }
+
+    #[test]
+    fn is_dangerous() {
+        let bd = Chess::from_fen("r3k2rpppppppp8888PPPrPPPPR3K2R".to_string()).unwrap();
+        assert!(bd.is_dangerous(59));
+        //assert!(bd.mv(60, 58).is_err());
     }
 
     #[test]

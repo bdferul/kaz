@@ -1,6 +1,14 @@
+//! You know, for chess
+
+//  Todo
+//  * castling notation
+//  * pawn promotion
+//  * pawn promotion notation
+
 mod fen;
 mod lib;
-mod moves;
+mod movement;
+//mod moves;
 mod notation;
 mod piece;
 //mod ai;
@@ -51,6 +59,7 @@ pub struct Chess {
     pub checkmate: bool,
     pub stalemate: bool,
     pub move_log: Vec<String>,
+    pub promotable: Option<usize>,
 }
 
 impl Chess {
@@ -155,6 +164,7 @@ impl Default for Chess {
             checkmate: false,
             stalemate: false,
             move_log: vec![],
+            promotable: None,
         }
     }
 }

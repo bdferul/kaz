@@ -12,25 +12,25 @@ struct ChessBoard {
 pub fn app(cx: Scope<()>) -> Element {
     let chess_board = use_state(&cx, || ChessBoard::default());
     let hovering = use_state(&cx, || None);
-    let input_fen = use_state(&cx, || String::new());
+    let input_fen = use_state(&cx, || String::from("r3k2rpppppppp8888PPPPPPPPR3K2R"));
     let input_fen_error = use_state(&cx, || String::new());
     let input_std_note = use_state(&cx, || String::new());
 
     let cheat_highlighting = |x: usize,y: usize| {
         let mut r = if (x+y) & 1 == 1 {
-            bg_fuchsia_300
+            bg_fuchsia_400
         } else {
             bg_fuchsia_200
         };
         if let Some(h) = **hovering {
-            if chess_board.chess.choices(h).0.contains(&mdx!(x,y)) {
+            if chess_board.chess.choices(h).contains(&mdx!(x,y)) {
             //if chess_board.chess.king_possible(**hovering).contains(&mdx!(x,y)) {
                 r = bg_amber_500;
             }
         }
         
         if let Some(a) = chess_board.selection {
-            if chess_board.chess.choices(a).0.contains(&mdx!(x,y)) {
+            if chess_board.chess.choices(a).contains(&mdx!(x,y)) {
                 r = bg_green_500;
             }
         }
@@ -98,10 +98,8 @@ pub fn app(cx: Scope<()>) -> Element {
                             }
                         },
                     }
-                    br {}
-                    //style: twa![h_full],
                     chess_board.chess.move_log.iter().enumerate().map(|(i,msg)| rsx!(
-                        "{i}: {msg}",
+                        "{i}. {msg}",
                         br {}
                     ))
                 }
@@ -109,10 +107,17 @@ pub fn app(cx: Scope<()>) -> Element {
             }
             div {
                 class: "log",
-                chess_board.chess.all_choices_note().iter().enumerate().map(|(i,msg)| rsx!(
+                {
+                    let mut acn = chess_board.chess.all_choices_note();
+                    for a in acn.iter_mut() {
+                        *a = a.to_ascii_uppercase();
+                    }
+                    acn.sort();
+                    acn.into_iter().enumerate().map(|(i,msg)| rsx!(
                     "{i}: {msg}",
                     br {}
-                ))
+                    ))
+                }
             }
         }
     ))
@@ -127,24 +132,13 @@ impl ChessBoard {
                 return;
             }
         }
-
+        
         if let Some(a) = self.selection {
             if self.chess.mv(a, src).is_err() {
                 self.log.push("invalid selection".to_string());
             }
+
+            self.selection = None
         }
-        /*
-        let pos = ndx(x, y);
-        if let Some(parent) = self.selection {
-            if self.chess.mv(parent, pos).is_err() {
-                self.log.push("invalid selection".to_string());
-            }
-            self.selection = None;
-        } else {
-            if self.chess.board()[pos].is_some() {
-                self.selection = Some(pos)
-            }
-        }
-        */
     }
 }

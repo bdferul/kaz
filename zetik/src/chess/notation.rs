@@ -1,14 +1,28 @@
-use super::piece::{Class::*, Piece};
+use super::piece::{Class::*, Piece, Side::*};
 use crate::{
-    chess::{fndx, Chess},mdx,
+    chess::{fndx, Chess},
+    mdx,
 };
-
 
 impl Chess {
     pub fn to_std_notation(&self, src: usize, dst: usize) -> Option<String> {
         let Some(src_p) = self.board[src] else {
             return None
         };
+
+        if src_p.class == King {
+            match src {
+                4 | 60 => {
+                    if dst == src + 2 {
+                        return Some("0-0".to_string());
+                    }
+                    if dst == src - 2 {
+                        return Some("0-0-0".to_string());
+                    }
+                }
+                _ => (),
+            }
+        }
 
         let src_str_chars: Vec<char> = Chess::fen_pos(src).unwrap().chars().collect();
         let mut src_str_x = String::new();
@@ -20,17 +34,15 @@ impl Chess {
             .enumerate()
             .filter(|(i, x)| {
                 let Some(p) = x else {
-                return false;
-            };
+                    return false;
+                };
 
                 *p == src_p && *i != src
             })
             .map(|(i, _)| i)
-            .filter(|i| self.choices(*i).0.contains(&dst))
+            .filter(|i| self.choices(*i).contains(&dst))
             .map(|i| fndx(i))
             .collect();
-
-        println!("{:?}", same_class);
 
         let (src_x, src_y) = fndx(src);
         for (x, y) in same_class {
@@ -49,12 +61,19 @@ impl Chess {
         Some(format!("{p_str}{src_str_x}{src_str_y}{cap}{dst_str}"))
     }
 
-    pub fn all_choices_note(&self) ->  Vec<String> {
-        let choices: Vec<(usize, Vec<usize>)> = (0..self.board.len()).map(|i| (i,self.choices(i).0)).filter(|(_,x)| x.len() > 0).collect();
+    pub fn all_choices_note(&self) -> Vec<String> {
+        let choices: Vec<(usize, Vec<usize>)> = (0..self.board.len())
+            .map(|i| (i, self.choices(i)))
+            .filter(|(_, x)| x.len() > 0)
+            .collect();
 
         let mut r = vec![];
-        for (src,dsts) in choices.into_iter() {
-            r.extend(dsts.into_iter().map(|dst| self.to_std_notation(src, dst).unwrap()).collect::<Vec<String>>());
+        for (src, dsts) in choices.into_iter() {
+            r.extend(
+                dsts.into_iter()
+                    .map(|dst| self.to_std_notation(src, dst).unwrap())
+                    .collect::<Vec<String>>(),
+            );
         }
 
         r
@@ -72,11 +91,23 @@ impl Chess {
     /// Returns in the form of `Result<(src, dst)>`
     pub fn from_std_notation(&self, note: String) -> Result<(usize, usize), String> {
         let note = note.trim();
+
+        let castle_src = if self.turn == White {60} else {4};
+        match note {
+            "0-0"|"O-O" => return Ok((castle_src, castle_src + 2)),
+            "0-0-0"|"O-O-O" => return Ok((castle_src, castle_src - 2)),
+            _ => (),
+        }
+
         if note.len() < 2 {
             return Err(String::from("Input string is not long enough"));
         }
 
-        let note_chars = note.chars().filter(|c| *c != 'x').rev().collect::<Vec<char>>();
+        let note_chars = note
+            .chars()
+            .filter(|c| *c != 'x')
+            .rev()
+            .collect::<Vec<char>>();
 
         // start dst
 
@@ -87,7 +118,7 @@ impl Chess {
                 dst_y
             ));
         };
-        let dst_y = 8-note_chars[0].to_digit(9).unwrap();
+        let dst_y = 8 - note_chars[0].to_digit(9).unwrap();
         let dst_x = note_chars[1];
         if !('a'..='h').any(|c| c == dst_x) {
             return Err(String::new());
@@ -163,12 +194,12 @@ impl Chess {
         };
 
         println!("srcs: {:?}", (&srcs, &src_x, &src_y, src_class));
-        println!("self.choices(6).0: {:?}", (self.choices(6).0, dst));
+        println!("self.choices(6).0: {:?}", (self.choices(6), dst));
 
         let valid = srcs
             .into_iter()
             .filter(|x| {
-                self.choices(*x).0.contains(&dst) && self.board[*x].unwrap().class == src_class
+                self.choices(*x).contains(&dst) && self.board[*x].unwrap().class == src_class
             })
             .collect::<Vec<usize>>();
 
@@ -184,7 +215,6 @@ impl Chess {
     ///
     /// Will panic if `self.board[src] == None`
     pub fn log(&mut self, src: usize, dst: usize) {
-        println!("pub fn log()");
         self.move_log.push(self.to_std_notation(src, dst).unwrap());
     }
 }

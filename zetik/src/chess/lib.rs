@@ -36,8 +36,11 @@ pub(crate) use mdx;
 
 #[macro_export]
 macro_rules! fmdx {
+    ($x:expr) => {
+        ($x as usize % 8, $x as usize / 8)
+    };
     ($x:expr, $t:ty) => {
-        ($x as $t % 8, $x as $t / 8)
+        ($x as $t % (8 as $t), $x as $t / (8 as $t))
     };
 }
 pub(crate) use fmdx;
@@ -50,3 +53,23 @@ macro_rules! in_range {
     };
 }
 pub(crate) use in_range;
+
+/// Acts like the standard println macro, but it prints leading with the line number
+#[macro_export]
+macro_rules! pln {
+    () => {
+        $crate::print!("\n")
+    };
+    ($fmt:expr) => {{
+        print!("{}: ", line!());
+        print!($fmt);
+        println!("\t{}:{}:{}", file!(), line!(), column!());
+    }};
+    ($fmt:expr, $($arg:tt)*) => {{
+        print!("{}: ", line!());
+        print!($fmt, $($arg)*);
+        println!("\t{}:{}:{}", file!(), line!(), column!());
+    }};
+}
+#[allow(unused_imports)]
+pub(crate) use pln;
