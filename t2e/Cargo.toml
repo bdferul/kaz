@@ -1,0 +1,6 @@
+[workspace]
+members = [
+    "axum-server",
+    "the_library",
+    "front",
+]
