@@ -1,8 +1,8 @@
 use super::{
-    misc::*,
+    lib::*,
     piece::{self, Piece, Side::*},
 };
-use crate::Chess;
+use crate::chess::Chess;
 
 impl Chess {
     /// Returns the FEN char interpretation of the u8 piece value
@@ -24,14 +24,14 @@ impl Chess {
     }
 
     /// Returns a FEN formatted index of a square on a board (ie. "e3")
-    fn fen_pos(a: usize) -> Result<String, ()> {
+    pub fn fen_pos(a: usize) -> Option<String> {
         if a >= 64 {
-            return Err(());
+            return None;
         }
 
         let (x, y) = fndx(a);
 
-        Ok(format!("{}{}", (('a' as u8) + x as u8) as char, 8 - y))
+        Some(format!("{}{}", (('a' as u8) + x as u8) as char, 8 - y))
     }
 
     // Returns the usize parsed from the FEN formatted string input (ie. "e3")
@@ -174,6 +174,7 @@ impl Chess {
 
     /// Returns chess struct derrived from the parsed FEN string
     pub fn from_fen(fen: String) -> Result<Chess, &'static str> {
+        let fen = fen.trim();
         let items: Vec<String> = fen.split(&[' ', '.'][..]).map(|s| s.to_string()).collect();
 
         let ffp = Chess::from_fen_pieces(&items[0]);
@@ -233,14 +234,18 @@ impl Chess {
 
         r.board = board;
 
+        r.set_check();
+        r.checkmate = r.is_checkmate();
+        r.stalemate = r.is_stalemate();
+
         Ok(r)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::ndx;
-    use crate::Chess;
+    use crate::chess::ndx;
+    use crate::chess::Chess;
 
     #[test]
     fn fen_from_default() {
@@ -299,6 +304,6 @@ mod tests {
             .into_iter()
             .for_each(|(a, b)| assert_eq!(a.to_string(), Chess::fen_pos(b).unwrap()));
 
-        assert!(Chess::fen_pos(64).is_err());
+        assert!(Chess::fen_pos(64).is_none());
     }
 }

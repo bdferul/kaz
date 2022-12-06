@@ -1,7 +1,19 @@
+//! You know, for chess
+
+//  Todo
+//  * castling notation
+//  * pawn promotion
+//  * pawn promotion notation
+
 mod fen;
 mod lib;
-mod moves;
+mod movement;
+//mod moves;
+mod notation;
 mod piece;
+//mod ai;
+
+//pub use ai::Ai;
 pub use lib::*;
 
 use piece::{
@@ -40,14 +52,29 @@ pub struct Chess {
     pub halfmoves: u32,
     /// The number of completed turns in the game.
     ///
-    /// This number is incremented by one every time Black moves.
+    /// This number starts at 1 and is incremented by one every time Black moves.
     pub fullmoves: u32,
+
+    pub check: Option<Side>,
+    pub checkmate: bool,
+    pub stalemate: bool,
+    pub move_log: Vec<String>,
+    pub promotable: Option<usize>,
 }
 
 impl Chess {
     /// Clone of the internal board vector
     pub fn board(&self) -> Vec<P> {
         self.board.clone()
+    }
+
+    /// Returns Some(*winning side*) or None if there is no winner
+    pub fn winner(&self) -> Option<Side> {
+        if self.checkmate {
+            self.check
+        } else {
+            None
+        }
     }
 
     /// Mutable reference to the internal board vector
@@ -133,6 +160,11 @@ impl Default for Chess {
             castle: [true;4],
             halfmoves: 0,
             fullmoves: 1,
+            check: None,
+            checkmate: false,
+            stalemate: false,
+            move_log: vec![],
+            promotable: None,
         }
     }
 }
