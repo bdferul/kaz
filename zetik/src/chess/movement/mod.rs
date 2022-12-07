@@ -2,11 +2,6 @@ mod basic_choices;
 mod game_over;
 mod complex_choices;
 
-use std::num::NonZeroI8;
-use std::path::StripPrefixError;
-
-use super::lib::*;
-use super::piece::*;
 use super::piece::{
     Class::*,
     Side::{self, *},
@@ -211,7 +206,7 @@ mod tests {
     use crate::{
         chess::piece::Side::*,
         chess::Chess,
-        chess::{lib::ndx, pln},
+        chess::{lib::ndx},
     };
 
     #[test]

@@ -98,10 +98,6 @@ impl Chess {
                 }
             }
         }
-
-        pub(super) fn set_promotion(&mut self) {
-
-        }
 }
 
 #[cfg(test)]

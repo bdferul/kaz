@@ -32,6 +32,7 @@ macro_rules! mdx {
         ($x as $t + ($y as $t * 8))
     }};
 }
+#[allow(unused)]
 pub(crate) use mdx;
 
 #[macro_export]
@@ -43,6 +44,7 @@ macro_rules! fmdx {
         ($x as $t % (8 as $t), $x as $t / (8 as $t))
     };
 }
+#[allow(unused)]
 pub(crate) use fmdx;
 
 /// low <= x < high
@@ -52,6 +54,7 @@ macro_rules! in_range {
         $low <= $x && $x < $high
     };
 }
+#[allow(unused)]
 pub(crate) use in_range;
 
 /// Acts like the standard println macro, but it prints leading with the line number
