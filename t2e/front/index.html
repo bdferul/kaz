@@ -3,7 +3,13 @@
     <head>
         <meta charset="utf-8" />
         <title>T2E</title>
-        <link data-trunk rel="css" href="tailwind.css">
-        <link data-trunk rel="scss" href="style.scss">
+        <link rel="stylesheet" href="tailwind.css">
     </head>
+    <body>
+        <section id="app"></section>
+        <script type="module">
+            import init from '/pkg/package.js';
+            init('/pkg/package_bg.wasm');
+        </script>
+    </body>
 </html>

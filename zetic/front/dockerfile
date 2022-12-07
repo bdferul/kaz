@@ -1,5 +1,0 @@
-from trunk
-
-workdir /app
-
-cmd ["trunk", "serve"]
