@@ -61,6 +61,7 @@ name = "front"
 version = "0.1.0"
 dependencies = [
  "seed",
+ "zetik",
 ]
 
 [[package]]
@@ -564,3 +565,9 @@ dependencies = [
  "js-sys",
  "wasm-bindgen",
 ]
+
+[[package]]
+name = "zetik"
+version = "0.0.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd794678d3b42d2baa8b0ea340c108c74c55e9ae348b0bcda045122a7125f3b3"

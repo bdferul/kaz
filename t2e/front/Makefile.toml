@@ -8,9 +8,10 @@ skip_core_tasks = true
 
 [tasks.watch]
 description = "Watch files and recompile the project on change"
-run_task = [
-    { name = "build" },
-]
+script = '''
+cargo make build
+cargo make tailwind
+'''
 watch = true
 
 [tasks.serve]
@@ -30,6 +31,11 @@ description = "Build with wasm-pack"
 install_crate = { crate_name = "wasm-pack", binary = "wasm-pack", test_arg = "-V" }
 command = "wasm-pack"
 args = ["build", "--target", "web", "--out-name", "package", "--dev"]
+
+[tasks.tailwind]
+description = "Build tailwind css file [tw.css]"
+command = "tailwindcss"
+args = ["-o", "tw.css"]
 
 [tasks.build_release]
 description = "Build with wasm-pack in release mode"
