@@ -1,6 +1,22 @@
 use super::lib::*;
-use super::piece::{Rank::*, Side::{*, self}};
+use super::piece::{
+    Class::*,
+    Side::{self, *},
+};
 use crate::chess::Chess;
+
+#[allow(dead_code)]
+pub struct Choice {
+    pub src: usize,
+    pub dst: usize,
+}
+
+impl Choice {
+    #[allow(dead_code)]
+    pub fn new(src: usize, dst: usize) -> Choice {
+        Choice { src, dst }
+    }
+}
 
 /**
 White
@@ -48,8 +64,12 @@ impl Chess {
             //tmp_game.turn.flip();
             if !tmp_game.in_check(self.turn) {
                 //tmp_game.turn.flip();
+                self.log(src, dst);
+                println!("{:?}", self.move_log);
+                let log = self.move_log.clone();
                 *self = tmp_game;
-                
+                self.move_log = log;
+
                 self.set_check();
                 self.checkmate = self.is_checkmate();
                 self.stalemate = self.is_stalemate();
@@ -62,23 +82,26 @@ impl Chess {
     }
 
     pub fn set_check(&mut self) {
-        self.check = match (self.in_check(White),self.in_check(Black)) {
-                    (true,_) => Some(White),
-                    (_,true) => Some(Black),
-                    _ => None,
-                };
+        self.check = match (self.in_check(White), self.in_check(Black)) {
+            (true, _) => Some(White),
+            (_, true) => Some(Black),
+            _ => None,
+        };
     }
 
-
-
     fn positions_of_side(&self, turn: Side) -> Vec<usize> {
-        self.board.iter().enumerate().filter(|(_,x)| {
-            let Some(p) = x else {
+        self.board
+            .iter()
+            .enumerate()
+            .filter(|(_, x)| {
+                let Some(p) = x else {
                 return false;
             };
 
-            p.side != turn
-        }).map(|(i,_)| i).collect()
+                p.side != turn
+            })
+            .map(|(i, _)| i)
+            .collect()
     }
 
     pub fn is_checkmate(&self) -> bool {
@@ -88,19 +111,21 @@ impl Chess {
 
         let friendlies = self.positions_of_side(in_check);
 
-        friendlies.iter().all(|f| self.possibilities(*f).0.len() == 0)
+        friendlies.iter().all(|f| self.choices(*f).0.len() == 0)
     }
 
     pub fn is_stalemate(&self) -> bool {
         if self.checkmate {
-            return false
+            return false;
         }
 
         if self.halfmoves == 100 {
-            return true
+            return true;
         }
 
-        self.positions_of_side(self.turn).iter().all(|f| self.possibilities(*f).0.len() == 0)
+        self.positions_of_side(self.turn)
+            .iter()
+            .all(|f| self.choices(*f).0.len() == 0)
     }
 
     /// moves the piece from src -> dst, updating all relevant fields, without checking anything
@@ -114,7 +139,7 @@ impl Chess {
         en_passant: Option<usize>,
     ) {
         chess.check_en_passant(src, dst, double_dst, en_passant);
-        if chess.board[src].unwrap().rank == Pawn || chess.board[dst].is_some() {
+        if chess.board[src].unwrap().class == Pawn || chess.board[dst].is_some() {
             chess.halfmoves = 0;
         } else {
             chess.halfmoves += 1;
@@ -131,14 +156,20 @@ impl Chess {
         chess.turn.flip();
     }
 
-    pub fn possibilities(&self, src: usize) -> (Vec<usize>, Option<usize>, Option<usize>) {
-        let (a,b,c) = self.unchecked_possibilities(src);
+    pub fn choices(&self, src: usize) -> (Vec<usize>, Option<usize>, Option<usize>) {
+        let (a, b, c) = self.unchecked_possibilities(src);
 
-        (a.into_iter().filter(|x| {
-            let mut tmp = self.clone();
-            Chess::move_unchecked(&mut tmp, src, *x, b, c);
-            !tmp.in_check(self.turn)
-        }).collect(),b,c)
+        (
+            a.into_iter()
+                .filter(|x| {
+                    let mut tmp = self.clone();
+                    Chess::move_unchecked(&mut tmp, src, *x, b, c);
+                    !tmp.in_check(self.turn)
+                })
+                .collect(),
+            b,
+            c,
+        )
     }
 
     fn unchecked_possibilities(&self, src: usize) -> (Vec<usize>, Option<usize>, Option<usize>) {
@@ -147,7 +178,7 @@ impl Chess {
             match self.board[src] {
                 Some(piece) => {
                     if piece.side == self.turn {
-                        match piece.rank {
+                        match piece.class {
                             King => self.king_possible(src), //todo
                             Queen => self.queen_possible(src),
                             Rook => self.rook_possible(src),
@@ -170,7 +201,6 @@ impl Chess {
                 Some(piece) => piece.side != self.turn,
                 None => true,
             })
-            
             .collect(),
             tails.0,
             tails.1,
@@ -325,6 +355,13 @@ impl Chess {
         }
     }
 
+    pub fn all_choices(&self) -> Vec<(usize,usize)> {
+        (0..self.board.len()).map(|i| (i,self.choices(i).0)).filter(|(_,x)| x.len() > 0).fold(vec![], |mut acc, (src,dsts)| {
+            acc.extend(dsts.iter().map(|dst| (src,*dst)));
+            acc
+        })
+    }
+
     /// returns a vector of possibilities
     pub fn pawn_possible(&self, src: usize) -> (Vec<usize>, Option<usize>, Option<usize>) {
         let mut r = vec![];
@@ -467,19 +504,25 @@ impl Chess {
     fn in_check(&self, turn: Side) -> bool {
         let mut enemy_board = self.clone();
         enemy_board.turn = !turn;
-        let enemies: Vec<usize> = self.board.iter().enumerate().filter(|(_,x)| {
-            let Some(p) = x else {
+        let enemies: Vec<usize> = self
+            .board
+            .iter()
+            .enumerate()
+            .filter(|(_, x)| {
+                let Some(p) = x else {
                 return false;
             };
 
-            p.side != turn
-        }).map(|(i,_)| i).collect();
+                p.side != turn
+            })
+            .map(|(i, _)| i)
+            .collect();
 
         enemies.into_iter().any(|enemy| {
             let ebu = enemy_board.unchecked_possibilities(enemy).0;
             ebu.into_iter().any(|e_move| {
                 if let Some(p) = self.board[e_move] {
-                    p.side == turn && p.rank == King
+                    p.side == turn && p.class == King
                 } else {
                     false
                 }

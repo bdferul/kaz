@@ -1,9 +1,13 @@
 mod fen;
 mod lib;
 mod moves;
+mod notation;
 mod piece;
 mod standard_notation;
 //mod movement;
+//mod ai;
+
+//pub use ai::Ai;
 pub use lib::*;
 
 use piece::{

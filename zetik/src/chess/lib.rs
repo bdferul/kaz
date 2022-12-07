@@ -14,13 +14,13 @@ pub fn fndx(p: usize) -> (usize, usize) {
 #[macro_export]
 macro_rules! mdx {
     ($x:expr, $y:expr) => {{
-        if $x > 7 {
+        if $x.to_owned() > 7 {
             panic!("x is too large: {}", $x);
         }
-        if $y > 7 {
+        if $y.to_owned() > 7 {
             panic!("y is too large: {}", $y);
         }
-        ($x as usize + ($y as usize * 8))
+        ($x.to_owned() as usize + ($y.to_owned() as usize * 8))
     }};
     ($x:expr, $y:expr, $t:ty) => {{
         if $x > 7 {

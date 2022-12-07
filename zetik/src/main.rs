@@ -1,4 +1,4 @@
-use zetik::{chess::Chess, mdx};
+use zetik::{chess::Chess};
 
 fn main() {
     let mut cb = Chess::from_fen("K1b58888888 b".to_string()).unwrap();

@@ -24,14 +24,14 @@ impl Chess {
     }
 
     /// Returns a FEN formatted index of a square on a board (ie. "e3")
-    fn fen_pos(a: usize) -> Result<String, ()> {
+    pub fn fen_pos(a: usize) -> Option<String> {
         if a >= 64 {
-            return Err(());
+            return None;
         }
 
         let (x, y) = fndx(a);
 
-        Ok(format!("{}{}", (('a' as u8) + x as u8) as char, 8 - y))
+        Some(format!("{}{}", (('a' as u8) + x as u8) as char, 8 - y))
     }
 
     // Returns the usize parsed from the FEN formatted string input (ie. "e3")
@@ -304,6 +304,6 @@ mod tests {
             .into_iter()
             .for_each(|(a, b)| assert_eq!(a.to_string(), Chess::fen_pos(b).unwrap()));
 
-        assert!(Chess::fen_pos(64).is_err());
+        assert!(Chess::fen_pos(64).is_none());
     }
 }
