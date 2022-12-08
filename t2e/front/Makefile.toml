@@ -16,9 +16,9 @@ watch = true
 
 [tasks.serve]
 description = "Start server"
-install_crate = { crate_name = "microserver", binary = "microserver", test_arg = "-h" }
-command = "microserver"
-args = ["--port", "${PORT}"]
+install_crate = { crate_name = "live-server", binary = "live-server", test_arg = "--help" }
+command = "live-server"
+args = ["-h", "0.0.0.0", "-p", "${PORT}"]
 
 [tasks.verify]
 description = "Format, lint with Clippy and run tests"
@@ -33,7 +33,7 @@ command = "wasm-pack"
 args = ["build", "--target", "web", "--out-name", "package", "--dev"]
 
 [tasks.tailwind]
-description = "Build tailwind css file [tw.css]"
+description = "Build tailwind css file 'tw.css'"
 command = "tailwindcss"
 args = ["-o", "tw.css"]
 
