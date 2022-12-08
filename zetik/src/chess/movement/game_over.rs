@@ -8,7 +8,7 @@ impl Chess {
 
         let friendlies = self.positions_of_side(in_check);
 
-        friendlies.iter().all(|f| self.choices(*f).len() == 0)
+        friendlies.iter().all(|f| self.choices(*f).is_empty())
     }
 
     pub fn is_stalemate(&self) -> bool {
@@ -22,14 +22,14 @@ impl Chess {
 
         self.positions_of_side(self.turn)
             .iter()
-            .all(|f| self.choices(*f).len() == 0)
+            .all(|f| self.choices(*f).is_empty())
     }
 
     /// Checks if the given turn is in check
     pub(super) fn in_check(&self, turn: Side) -> bool {
         let mut enemy_board = self.clone();
         enemy_board.turn = !turn;
-        let enemies: Vec<usize> = self
+        let mut enemies = self
             .board
             .iter()
             .enumerate()
@@ -40,10 +40,9 @@ impl Chess {
 
                 p.side != turn
             })
-            .map(|(i, _)| i)
-            .collect();
+            .map(|(i, _)| i);
 
-        enemies.into_iter().any(|enemy| {
+        enemies.any(|enemy| {
             let ebu = enemy_board.basic_choices(enemy);
             ebu.into_iter().any(|e_move| {
                 if let Some(p) = self.board[e_move] {

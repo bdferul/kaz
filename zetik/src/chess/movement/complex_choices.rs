@@ -1,4 +1,4 @@
-use crate::{chess::{Chess, piece::*, Side::*, Class::*, fndx}, mdx, fmdx};
+use crate::{chess::{Chess, piece::*, Side::*, Class::*}, mdx, fmdx};
 
 impl Chess {
         ///
@@ -9,12 +9,9 @@ impl Chess {
                 return r
             };
 
-            match src_p.class {
-                King => r.extend(self.castle_choices(src_p.side)),
-                _ => (),
+            if src_p.class == King {
+                r.extend(self.castle_choices(src_p.side));
             }
-
-
             
             r
         }
@@ -28,8 +25,8 @@ impl Chess {
                 return
             }
     
-            let (_,src_y) = fndx(src);
-            let (dst_x,_) = fndx(dst);
+            let (_,src_y) = fmdx!(src);
+            let (dst_x,_) = fmdx!(dst);
     
             if dst == ep {
                 self.board[mdx!(dst_x,src_y)] = NO;
@@ -102,22 +99,21 @@ impl Chess {
 
 #[cfg(test)]
 mod tests {
-    use crate::*;
     use super::*;
     #[test]
     fn castle() {
         let mut bd = Chess::from_fen("r3k2rpppppppp8888PPPPPPPPR3K2R".to_string()).unwrap();
         assert!(bd.mv(60, 62).is_ok());
-        pln!("{}", bd.to_fen());
+        dbg!(bd.to_fen());
         assert!(bd.mv(4, 6).is_ok());
 
         let mut bd = Chess::from_fen("r3k2rpppppppp8888PPPPPPPPR3K2R".to_string()).unwrap();
         assert!(bd.mv(60, 58).is_ok());
-        pln!("{}", bd.to_fen());
+        dbg!(bd.to_fen());
         assert!(bd.mv(4, 2).is_ok());
 
         let mut bd = Chess::from_fen("r3k2rpppppppp8888PPPrPPPPR3K2R".to_string()).unwrap();
-        pln!("{}", bd.is_dangerous(59));
+        dbg!(bd.is_dangerous(59));
         assert!(bd.mv(60, 58).is_err());
     }
 }

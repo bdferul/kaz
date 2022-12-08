@@ -32,17 +32,17 @@ impl Chess {
     /// Performs the move and returns 'true' if valid.
     ///
     /// Does nothing and returns 'false' if invalid
-    pub fn mv(&mut self, src: usize, dst: usize) -> Result<(), ()> {
+    pub fn mv(&mut self, src: usize, dst: usize) -> Result<(), String> {
         if dst >= 64 || src >= 64 {
-            return Err(());
+            return Err(String::from("src or dst is too large. They must be less than 64"));
         }
 
         if self.capturable(src) {
-            return Err(());
+            return Err("src is considered 'capturable'".to_string());
         }
 
         if self.board[dst].is_some() && !self.capturable(dst) {
-            return Err(());
+            return Err("dst is not empty and also not 'capturable'".to_string());
         }
 
         let choices = self.choices(src);
@@ -63,12 +63,13 @@ impl Chess {
                 self.set_check();
                 self.checkmate = self.is_checkmate();
                 self.stalemate = self.is_stalemate();
-                return Ok(());
+                Ok(())
             } else {
-                return Err(());
+                Err("a move cannot place the current player's king in check".to_string())
             }
+        } else {
+            Err("The available moves for 'src' do not contain 'dst'".to_string())
         }
-        Err(())
     }
 
     fn positions_of_side(&self, turn: Side) -> Vec<usize> {
@@ -206,13 +207,13 @@ mod tests {
     use crate::{
         chess::piece::Side::*,
         chess::Chess,
-        chess::{lib::ndx},
+        mdx,
     };
 
     #[test]
     fn wrong_color_turn() {
         let mut chess = Chess::from_fen("8/8/8/p6P/8/8/8/8 w".to_string()).unwrap();
-        assert!(chess.mv(ndx(0, 3), ndx(0, 2)).is_err()); // try move the black pawn like a white pawn
+        assert!(chess.mv(mdx!(0, 3), mdx!(0, 2)).is_err()); // try move the black pawn like a white pawn
         assert!(chess.turn == White); //ensure it is still white's turn after a failed move
     }
 
@@ -225,9 +226,9 @@ mod tests {
     #[test]
     fn bishop() {
         let mut bd = Chess::from_fen("b7/8/8/8/8/8/8/7B w".to_string()).unwrap();
-        assert!(bd.mv(63, ndx(5, 5)).is_ok());
-        assert!(bd.mv(0, ndx(1, 1)).is_ok());
-        assert!(bd.mv(ndx(5, 5), ndx(5, 4)).is_err());
+        assert!(bd.mv(63, mdx!(5, 5)).is_ok());
+        assert!(bd.mv(0, mdx!(1, 1)).is_ok());
+        assert!(bd.mv(mdx!(5, 5), mdx!(5, 4)).is_err());
     }
 
     #[test]

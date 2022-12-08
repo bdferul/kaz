@@ -1,7 +1,7 @@
 use super::piece::{Class::*, Piece, Side::*};
 use crate::{
-    chess::{fndx, Chess},
-    mdx,
+    chess::Chess,
+    mdx,fmdx,
 };
 
 impl Chess {
@@ -41,10 +41,10 @@ impl Chess {
             })
             .map(|(i, _)| i)
             .filter(|i| self.choices(*i).contains(&dst))
-            .map(|i| fndx(i))
+            .map(|i| fmdx!(i))
             .collect();
 
-        let (src_x, src_y) = fndx(src);
+        let (src_x, src_y) = fmdx!(src);
         for (x, y) in same_class {
             if x == src_x {
                 src_str_x = src_str_chars[0].to_string();
@@ -56,7 +56,7 @@ impl Chess {
 
         let p_str = src_p.std_notation_piece();
         let cap = if self.board[dst].is_some() { "x" } else { "" };
-        let dst_str = Chess::fen_pos(dst).unwrap_or(String::new());
+        let dst_str = Chess::fen_pos(dst).unwrap_or_default();
 
         Some(format!("{p_str}{src_str_x}{src_str_y}{cap}{dst_str}"))
     }
@@ -64,7 +64,7 @@ impl Chess {
     pub fn all_choices_note(&self) -> Vec<String> {
         let choices: Vec<(usize, Vec<usize>)> = (0..self.board.len())
             .map(|i| (i, self.choices(i)))
-            .filter(|(_, x)| x.len() > 0)
+            .filter(|(_, x)| !x.is_empty())
             .collect();
 
         let mut r = vec![];
@@ -79,13 +79,13 @@ impl Chess {
         r
     }
 
-    pub fn mv_str(&mut self, note: String) -> Result<(), ()> {
+    pub fn mv_str(&mut self, note: String) -> Result<(), String> {
         let res = self.from_std_notation(note);
         println!("{:?}", res);
-        let Ok((src,dst)) = res else {
-            return Err(())
-        };
-        self.mv(src, dst)
+        match res {
+            Ok((src,dst)) => self.mv(src, dst),
+            Err(e) => Err(e),
+        }        
     }
 
     /// Returns in the form of `Result<(src, dst)>`
@@ -162,7 +162,7 @@ impl Chess {
                 if let Some(y) = tail.chars().position(|c| c == 'y') {
                     src_y = Some(note_chars[2 + y].to_digit(9).unwrap() as usize);
                 }
-            } else if tail != "" {
+            } else if tail.is_empty() {
                 return Err(format!(
                     "The first character(s) {:?} are invalid as a sequence",
                     tail.chars().rev().collect::<Vec<char>>()
@@ -184,7 +184,7 @@ impl Chess {
                 for x in x_range.iter() {
                     if let Some(piece) = self.board[mdx!(*x, *y)] {
                         if piece.side == self.turn && piece.class == src_class {
-                            srcs.push(mdx!(x, y));
+                            srcs.push(mdx!(*x, *y));
                         }
                     }
                 }

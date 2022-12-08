@@ -5,22 +5,23 @@
 //  * pawn promotion
 //  * pawn promotion notation
 
-mod fen;
 mod lib;
-mod movement;
+pub mod fen;
+pub mod movement;
 //mod moves;
-mod notation;
-mod piece;
+pub mod notation;
+pub mod piece;
 //mod ai;
 
 //pub use ai::Ai;
-pub use lib::*;
 
 use piece::{
     Side::{self, *},
     *,
 };
 use std::fmt::Debug;
+
+use crate::mdx;
 
 /**
 A chess library built for use with web api
@@ -120,7 +121,7 @@ impl Chess {
     pub fn pretty_print(&self) {
         for y in 0..8 {
             for x in 0..8 {
-                print!("{} ", Self::to_symbol(self.board[ndx(x, y)], '-'));
+                print!("{} ", Self::to_symbol(self.board[mdx!(x, y)], '-'));
             }
             println!();
         }
@@ -128,14 +129,12 @@ impl Chess {
 
     /// Returns the value of the piece located at the given coordinates
     pub fn sqr(&self, x: usize, y: usize) -> P {
-        self.board[ndx(x, y)]
+        self.board[mdx!(x, y)]
     }
 
     /// Returns `Chess::default()` but the board is `vec![None;64]`
     pub fn empty() -> Self {
-        let mut chess = Chess::default();
-        chess.board = vec![NO; 64];
-        chess
+        Chess {board: vec![NO; 64], ..Default::default()}
     }
 }
 

@@ -3,7 +3,7 @@ use std::ops::Not;
 use Class::*;
 use Side::*;
 
-pub type P = Option<Piece>;
+pub(super) type P = Option<Piece>;
 pub const WK: P = Some(Piece::from(White, King));
 pub const WQ: P = Some(Piece::from(White, Queen));
 pub const WB: P = Some(Piece::from(White, Bishop));
@@ -19,7 +19,7 @@ pub const BP: P = Some(Piece::from(Black, Pawn));
 pub const NO: P = None;
 const ORDER: [P; 12] = [WK, WQ, WR, WB, WN, WP, BK, BQ, BR, BB, BN, BP];
 
-#[derive(Debug, Clone, PartialEq, Copy)]
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub enum Class {
     King,
     Queen,
@@ -29,7 +29,7 @@ pub enum Class {
     Pawn,
 }
 
-#[derive(Debug, Clone, PartialEq, Copy)]
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub enum Side {
     White,
     Black,
@@ -51,7 +51,7 @@ impl Side {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Copy)]
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub struct Piece {
     pub side: Side,
     pub class: Class,

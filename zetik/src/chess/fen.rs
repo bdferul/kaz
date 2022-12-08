@@ -29,9 +29,9 @@ impl Chess {
             return None;
         }
 
-        let (x, y) = fndx(a);
+        let (x, y) = fmdx!(a);
 
-        Some(format!("{}{}", (('a' as u8) + x as u8) as char, 8 - y))
+        Some(format!("{}{}", ((b'a') + x as u8) as char, 8 - y))
     }
 
     // Returns the usize parsed from the FEN formatted string input (ie. "e3")
@@ -57,7 +57,7 @@ impl Chess {
 
         let y = 8 - y;
 
-        Ok(ndx(x, y))
+        Ok(mdx!(x, y))
     }
 
     /// Returns a url friendly FEN notation with no '/' separations and '.' as the whitespace
@@ -138,7 +138,7 @@ impl Chess {
     }
 
     /// Returns a vector inferred by the first part of a FEN string
-    pub fn from_fen_pieces(s: &String) -> Result<Vec<Option<Piece>>, &'static str> {
+    pub fn from_fen_pieces(s: &str) -> Result<Vec<Option<Piece>>, &'static str> {
         let mut board = vec![];
         for c in s.chars() {
             if board.len() < 64 {
@@ -147,9 +147,7 @@ impl Chess {
                     if board.len() + d as usize > 64 {
                         return e;
                     }
-                    for _ in 0..d {
-                        board.push(piece::NO);
-                    }
+                    board.resize(board.len() + d as usize, piece::NO);
                     continue;
                 }
 
@@ -207,13 +205,11 @@ impl Chess {
         }
 
         //en passant
-        if items.len() > 3 {
-            if items[3] != "-" {
+        if items.len() > 3 && items[3] != "-" {
                 let Ok(a) = Chess::from_fen_pos(&items[3]) else {
                     return Err("unable to parse en passant")
                 };
                 r.en_passant = Some(a);
-            }
         }
 
         //halfmoves
@@ -244,7 +240,7 @@ impl Chess {
 
 #[cfg(test)]
 mod tests {
-    use crate::chess::ndx;
+    use crate::mdx;
     use crate::chess::Chess;
 
     #[test]
@@ -267,13 +263,13 @@ mod tests {
     #[test]
     fn from_fen_pos() {
         let cases = [
-            ("e6", ndx(4, 2)),
-            ("c4", ndx(2, 4)),
-            ("d8", ndx(3, 0)),
-            ("a1", ndx(0, 7)),
-            ("a8", ndx(0, 0)),
-            ("h1", ndx(7, 7)),
-            ("h8", ndx(7, 0)),
+            ("e6", mdx!(4, 2)),
+            ("c4", mdx!(2, 4)),
+            ("d8", mdx!(3, 0)),
+            ("a1", mdx!(0, 7)),
+            ("a8", mdx!(0, 0)),
+            ("h1", mdx!(7, 7)),
+            ("h8", mdx!(7, 0)),
         ];
 
         cases
@@ -291,13 +287,13 @@ mod tests {
     #[test]
     fn fen_pos() {
         let cases = [
-            ("e6", ndx(4, 2)),
-            ("c4", ndx(2, 4)),
-            ("d8", ndx(3, 0)),
-            ("a1", ndx(0, 7)),
-            ("a8", ndx(0, 0)),
-            ("h1", ndx(7, 7)),
-            ("h8", ndx(7, 0)),
+            ("e6", mdx!(4, 2)),
+            ("c4", mdx!(2, 4)),
+            ("d8", mdx!(3, 0)),
+            ("a1", mdx!(0, 7)),
+            ("a8", mdx!(0, 0)),
+            ("h1", mdx!(7, 7)),
+            ("h8", mdx!(7, 0)),
         ];
 
         cases

@@ -1,6 +1,6 @@
 //! Everything in here must return a vector of possible moves independent of turn
 
-use crate::{chess::{Side::*, Class::*, fndx, Chess}, mdx, fmdx, in_range};
+use crate::{chess::{Side::*, Class::*, Chess}, mdx, fmdx};
 
 impl Chess {
     pub(super) fn basic_choices(&self, src: usize) -> Vec<usize> {
@@ -38,7 +38,7 @@ impl Chess {
         for y in -1..=1 {
             for x in -1..=1 {
                 let (dst_x, dst_y) = (src_x + x, src_y + y);
-                if in_range!(0, dst_x, 8) && in_range!(0, dst_y, 8) {
+                if (0..8).contains(&dst_x) && (0..8).contains(&dst_y) {
                     let ndx = mdx!(src_x + x, src_y + y);
                     if ndx != src {
                         if let Some(p) = self.board[ndx] {
@@ -88,7 +88,7 @@ impl Chess {
 
     pub(super) fn bishop_choices_basic(&self, src: usize) -> Vec<usize> {
         let mut r = vec![];
-        let (src_x, src_y) = fndx(src);
+        let (src_x, src_y) = fmdx!(src);
         let [mut is_ne, mut is_se, mut is_sw, mut is_nw] = [true; 4];
 
         for i in 1..8 {
@@ -222,7 +222,7 @@ impl Chess {
     pub(super) fn pawn_choices_basic(&self, src: usize) -> Vec<usize> {
         let mut r = vec![];
 
-        let (src_x, src_y) = fndx(src);
+        let (src_x, src_y) = fmdx!(src);
 
         if (src_y == 0 && self.turn == White) || (src_y == 7 && self.turn == Black) {
             return r;
@@ -235,7 +235,7 @@ impl Chess {
 
         // single move
         let single_move_y = src_y as i32 + dir;
-        if 0 <= single_move_y && single_move_y < 64 {
+        if (0..64).contains(&single_move_y) {
             let single_ndx = mdx!(src_x, single_move_y);
             if self.board[single_ndx].is_none() {
                 r.push(single_ndx);
@@ -267,7 +267,7 @@ impl Chess {
             match src_y {
                 1 | 6 => {
                     let double_move_y = src_y as i32 + (dir * 2);
-                    if 0 <= double_move_y && double_move_y < 8 {
+                    if (0..8).contains(&double_move_y) {
                         let ndx = mdx!(src_x, double_move_y);
                         if self.board[ndx].is_none() {
                             r.push(ndx);
@@ -284,23 +284,22 @@ impl Chess {
 
 #[cfg(test)]
 mod tests {
-    use crate::chess::ndx;
+    use crate::mdx;
     use super::*;
 
     #[test]
     fn simple_pawn_move() {
         let mut d = Chess::default();
-        assert!(d.mv(ndx(2, 6), ndx(2, 5)).is_ok());
+        assert!(d.mv(mdx!(2, 6), mdx!(2, 5)).is_ok());
         println!(
-            "{}\n{}",
+            "{}\nrnbqkbnr/pppppppp/8/8/8/2P5/PP1PPPPP/RNBQKBNR b KQkq - 0 1",
             d.to_fen(),
-            "rnbqkbnr/pppppppp/8/8/8/2P5/PP1PPPPP/RNBQKBNR b KQkq - 0 1"
         );
         assert_eq!(
             d.to_fen(),
             "rnbqkbnr/pppppppp/8/8/8/2P5/PP1PPPPP/RNBQKBNR b KQkq - 0 1"
         );
-        assert!(d.mv(ndx(5, 1), ndx(5, 2)).is_ok());
+        assert!(d.mv(mdx!(5, 1), mdx!(5, 2)).is_ok());
         assert_eq!(
             d.to_fen(),
             "rnbqkbnr/ppppp1pp/5p2/8/8/2P5/PP1PPPPP/RNBQKBNR w KQkq - 0 2"
@@ -310,20 +309,20 @@ mod tests {
     #[test]
     fn double_pawn_move() {
         let mut d = Chess::default();
-        assert!(d.mv(ndx(4, 6), ndx(4, 4)).is_ok());
+        assert!(d.mv(mdx!(4, 6), mdx!(4, 4)).is_ok());
         let mut chess = Chess::from_fen(
             "rnbqkbnr/pp1ppp1p/8/3P4/5PP1/2p1P1p1/PPP4P/RNBQKBNR w KQkq - 0 7".to_string(),
         )
         .unwrap();
-        assert!(chess.mv(ndx(2, 6), ndx(2, 4)).is_ok())
+        assert!(chess.mv(mdx!(2, 6), mdx!(2, 4)).is_ok())
     }
 
     #[test]
     fn bad_pawn_moves() {
         let mut d = Chess::default();
-        assert!(d.mv(ndx(7, 6), ndx(7, 6)).is_err());
-        assert!(d.mv(ndx(7, 6), ndx(7, 3)).is_err());
-        assert!(d.mv(ndx(2, 6), ndx(3, 5)).is_err());
+        assert!(d.mv(mdx!(7, 6), mdx!(7, 6)).is_err());
+        assert!(d.mv(mdx!(7, 6), mdx!(7, 3)).is_err());
+        assert!(d.mv(mdx!(2, 6), mdx!(3, 5)).is_err());
     }
 
     #[test]

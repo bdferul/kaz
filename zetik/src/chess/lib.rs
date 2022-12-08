@@ -1,26 +1,14 @@
-pub fn ndx(x: usize, y: usize) -> usize {
-    x + (y * 8)
-}
-
-pub fn fndx(p: usize) -> (usize, usize) {
-    (p % 8, p / 8)
-}
-
-/// use like `mdx!(x: int, y: int)`
-///
-/// returns usize
-///
-/// this is beautiful
+/// Accepts a set of x,y coordinates(and an optional type T) and returns a single usize(or T) of x*8y
 #[macro_export]
 macro_rules! mdx {
     ($x:expr, $y:expr) => {{
-        if $x.to_owned() > 7 {
+        if $x > 7 {
             panic!("x is too large: {}", $x);
         }
-        if $y.to_owned() > 7 {
+        if $y > 7 {
             panic!("y is too large: {}", $y);
         }
-        ($x.to_owned() as usize + ($y.to_owned() as usize * 8))
+        ($x as usize + ($y as usize * 8))
     }};
     ($x:expr, $y:expr, $t:ty) => {{
         if $x > 7 {
@@ -35,6 +23,7 @@ macro_rules! mdx {
 #[allow(unused)]
 pub(crate) use mdx;
 
+/// Accepts a single usize(and an optional type T) and returns  a tuple (x%8,x/8) as usize(or T)
 #[macro_export]
 macro_rules! fmdx {
     ($x:expr) => {
@@ -46,33 +35,3 @@ macro_rules! fmdx {
 }
 #[allow(unused)]
 pub(crate) use fmdx;
-
-/// low <= x < high
-#[macro_export]
-macro_rules! in_range {
-    ($low:expr, $x:expr, $high:expr) => {
-        $low <= $x && $x < $high
-    };
-}
-#[allow(unused)]
-pub(crate) use in_range;
-
-/// Acts like the standard println macro, but it prints leading with the line number
-#[macro_export]
-macro_rules! pln {
-    () => {
-        $crate::print!("\n")
-    };
-    ($fmt:expr) => {{
-        print!("{}: ", line!());
-        print!($fmt);
-        println!("\t{}:{}:{}", file!(), line!(), column!());
-    }};
-    ($fmt:expr, $($arg:tt)*) => {{
-        print!("{}: ", line!());
-        print!($fmt, $($arg)*);
-        println!("\t{}:{}:{}", file!(), line!(), column!());
-    }};
-}
-#[allow(unused_imports)]
-pub(crate) use pln;
