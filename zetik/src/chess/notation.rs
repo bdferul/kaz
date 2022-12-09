@@ -80,7 +80,7 @@ impl Chess {
     }
 
     pub fn mv_str(&mut self, note: String) -> Result<(), String> {
-        let res = self.from_std_notation(note);
+        let res = self.from_std_notation(&note);
         println!("{:?}", res);
         match res {
             Ok((src,dst)) => self.mv(src, dst),
@@ -89,7 +89,7 @@ impl Chess {
     }
 
     /// Returns in the form of `Result<(src, dst)>`
-    pub fn from_std_notation(&self, note: String) -> Result<(usize, usize), String> {
+    pub fn from_std_notation(&self, note: &str) -> Result<(usize, usize), String> {
         let note = note.trim();
 
         let castle_src = if self.turn == White {60} else {4};
@@ -251,7 +251,7 @@ mod tests {
     #[test]
     fn from_std_notation() {
         let cb = Chess::default();
-        assert_eq!(cb.from_std_notation("e4".to_string()), Ok((52, 36)));
+        assert_eq!(cb.from_std_notation(&"e4".to_string()), Ok((52, 36)));
         //assert!(cb.from_std_notation("Nf6".to_string()).is_ok());
     }
 

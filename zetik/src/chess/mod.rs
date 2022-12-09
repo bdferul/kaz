@@ -11,7 +11,7 @@ pub mod movement;
 //mod moves;
 pub mod notation;
 pub mod piece;
-//mod ai;
+pub mod ai;
 
 //pub use ai::Ai;
 
@@ -61,6 +61,7 @@ pub struct Chess {
     pub stalemate: bool,
     pub move_log: Vec<String>,
     pub promotable: Option<usize>,
+    pub ai: Option<ai::Ai>,
 }
 
 impl Chess {
@@ -164,6 +165,7 @@ impl Default for Chess {
             stalemate: false,
             move_log: vec![],
             promotable: None,
+            ai: None,
         }
     }
 }

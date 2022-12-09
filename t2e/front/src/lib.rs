@@ -59,7 +59,7 @@ fn update(msg: Msg, model: &mut Model, _: &mut impl Orders<Msg>) {
                     model.hover = None
                 }
             }
-        }
+        },
     }
     
 }
