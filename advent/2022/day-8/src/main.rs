@@ -1,6 +1,6 @@
-use std::{vec, collections::{HashMap, HashSet}};
+use std::{vec};
 
-const INPUT: &str = include_str!("example.txt");
+const INPUT: &str = include_str!("input.txt");
 
 struct Map {
     map: Vec<Vec<u32>>,
@@ -94,7 +94,6 @@ fn count_visible(map: &Map, x: usize, y: usize) -> u32 {
     if x == 0 || y == 0 || x == map.width - 1 || y == map.height - 1 {
         return 0;
     }
-    let mut checked = HashSet::new();
 
     let mut r = 1;
 
@@ -105,22 +104,27 @@ fn count_visible(map: &Map, x: usize, y: usize) -> u32 {
         (-1,0),
     ];
 
-    let mut cnt = 0;
     let max = map.map[y][x];
-    for d in dirs {
-        let nx = x as i32 + d.0;
-        let ny = y as i32 + d.1;
-        if ny == map.height as i32 || nx < 0 || ny < 0 || nx == map.width as i32 {
-            break
-        }
+    for (dx,dy) in dirs {
+        let mut cnt = 0;
+        for i in 1.. {
+            let nx = x as i32 + (dx*i);
+            let ny = y as i32 + (dy*i);
+            if nx < 0 || ny < 0 || nx >= map.width as i32 || ny >= map.height as i32 {
+                break;
+            }
 
-        cnt += 1;
-        checked.insert((nx,ny));
-        if map.map[ny as usize][nx as usize] >= max {
-            break
+            let mm = map.map[ny as usize][nx as usize];
+            cnt += 1;
+            if mm >= max {
+                break;
+            }
+        }
+        r *= cnt;
+        if cnt == 0 {
+            break;
         }
     }
-    r *= cnt;
 
     r
 }
@@ -138,6 +142,6 @@ mod tests {
             width,
             height,
         };
-        assert_eq!(super::count_visible(&map, 2, 1), 8);
+        assert_eq!(super::count_visible(&map, 2, 3), 8);
     }
 }
