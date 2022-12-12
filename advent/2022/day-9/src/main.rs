@@ -1,5 +1,5 @@
-const INPUT: &'static str = include_str!("input");
-use std::{collections::{HashSet,HashMap}, ops::{Add, Sub, Div, AddAssign}, fmt::{Debug, format, Display}, iter::{TakeWhile, Product}};
+const INPUT: &str = include_str!("input");
+use std::{collections::{HashSet,HashMap}, ops::{Add, Sub, Div, AddAssign}};
 
 #[derive(Eq, PartialEq, Clone, Copy, Hash)]
 struct Point {
@@ -25,17 +25,8 @@ impl Point {
         false
     }
 
-    pub fn to_tuple(&self) -> (i32,i32) {
+    pub fn as_tuple(&self) -> (i32,i32) {
         (self.x,self.y)
-    }
-}
-
-impl Display for Point {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_tuple("")
-            .field(&self.x)
-            .field(&self.y)
-            .finish()
     }
 }
 
@@ -71,13 +62,13 @@ fn main() {
         .lines()
         .map(|s| s.split(' ')
         .collect::<Vec<&str>>())
-        .map(|v| (v[0].chars().nth(0).unwrap(), v[1].parse::<i32>().unwrap()));
+        .map(|v| (v[0].chars().next().unwrap(), v[1].parse::<i32>().unwrap()));
 
     let mut rope = vec![(0,0).to_point(); 10];
     let mut visits: HashMap<usize, HashSet<Point>> = HashMap::new();
-    for i in 0..rope.len() {
+    for (i,r) in rope.iter().enumerate() {
         let mut tmp = HashSet::new();
-        tmp.insert(rope[i]);
+        tmp.insert(*r);
         visits.insert(i, tmp);
     }
 
@@ -108,7 +99,7 @@ fn catch_up(head: Point, tail: &mut Point) {
     if head.is_touching(*tail) {
         return
     }
-    let (mut dx,mut dy) = (head - *tail).to_tuple();
+    let (mut dx,mut dy) = (head - *tail).as_tuple();
     dx = dx.checked_div(dx.abs()).unwrap_or(0);
     dy = dy.checked_div(dy.abs()).unwrap_or(0);
     *tail += (dx,dy).to_point();
