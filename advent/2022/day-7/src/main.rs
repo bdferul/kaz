@@ -1,7 +1,9 @@
-#[derive(Debug, Clone, Copy)]
+use std::collections::HashMap;
+
+#[derive(Debug, Clone, Copy, PartialEq)]
 enum FileType {
     Dir,
-    File(usize),
+    Doc(usize),
 }
 
 #[derive(Debug, Clone)]
@@ -22,13 +24,50 @@ impl FileData {
 }
 
 fn main() {
+    let input = include_str!("input.txt");
+    let tree = get_dir_hash_map(input);
+
+    let mut dirs = tree
+        .iter()
+        .filter(|(_, x)| x.file_type == FileType::Dir)
+        .map(|(s, _)| s)
+        .collect::<Vec<&String>>();
+    dirs.sort_by_key(|s| 0 - s.chars().filter(|c| c == &'/').count() as i32);
+
+    let mut dir_sizes = HashMap::new();
+
+    for s in dirs {
+        let size = tree
+            .iter()
+            .filter(|(_, x)| x.parent == *s && x.me != *s)
+            .fold(0, |acc, (_, x)| match x.file_type {
+                FileType::Doc(n) => n + acc,
+                FileType::Dir => {
+                    acc + match dir_sizes.get(&x.me) {
+                        Some(n) => n,
+                        _ => panic!("{}", x.me),
+                    }
+                }
+            });
+        if dir_sizes.insert(s, size).is_some() {
+            panic!("{s}")
+        };
+        //println!("{s}: {size}");
+    }
+    println!("{:?}", dir_sizes.get(&"root".to_string()).unwrap());
+}
+
+fn print_tree(tree: HashMap<String,FileData>) {
+
+}
+
+fn get_dir_hash_map(input: &str) -> HashMap<String, FileData> {
     let mut tree = std::collections::HashMap::new();
     tree.insert(
         "root".to_string(),
         FileData::new("root", "root", FileType::Dir),
     );
     let mut current_directory = tree.get(&"root".to_string()).unwrap().me.clone();
-    let input = include_str!("test.txt");
     let mut commands = input.split("$ ");
     commands.next();
     for s in commands {
@@ -39,31 +78,28 @@ fn main() {
                 "/" => current_directory = tree.get(&"root".to_string()).unwrap().me.clone(),
                 ".." => current_directory = tree.get(&current_directory).unwrap().parent.clone(),
                 other => {
-                    dbg!(other);
                     let full_dir = format!("{}/{}", current_directory, other);
-                    println!("{}", full_dir);
-                    let tmp = tree.entry(full_dir.clone()).or_insert(FileData::new(
-                        &full_dir,
-                        &current_directory,
-                        FileType::Dir,
-                    ));
+                    let tmp = tree.entry(full_dir.clone()).or_insert_with(|| {
+                        FileData::new(&full_dir, &current_directory, FileType::Dir)
+                    });
                     current_directory = tmp.me.clone();
                 }
             },
             "ls" => {
                 while let Some(thing) = words.next() {
                     match thing {
-                        "dir" => {words.next();},
+                        "dir" => {
+                            words.next();
+                        }
                         size => {
                             let file_name = words.next().unwrap();
                             let full_dir = format!("{}/{}", current_directory, file_name);
-                            dbg!(&size,&full_dir,&file_name);
                             tree.insert(
                                 full_dir.clone(),
                                 FileData::new(
                                     &full_dir,
                                     &current_directory,
-                                    FileType::File(size.parse::<usize>().unwrap()),
+                                    FileType::Doc(size.parse::<usize>().unwrap()),
                                 ),
                             );
                         }
@@ -72,7 +108,10 @@ fn main() {
             }
             other => panic!("{}", other),
         }
-
-        dbg!(&tree);
+        if s.split_ascii_whitespace().next().unwrap().trim() == "cd" {
+            println!("{s}: {current_directory}");
+        }
     }
+
+    tree
 }
