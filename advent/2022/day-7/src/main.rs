@@ -1,5 +1,9 @@
 use std::collections::HashMap;
 
+const DISK_SIZE: usize = 70_000_000;
+const TARGET_SIZE: usize = DISK_SIZE - 30_000_000;
+const PART1_MAX: usize = 100_000;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum FileType {
     Dir,
@@ -20,6 +24,10 @@ impl FileData {
             parent: parent.to_string(),
             file_type,
         }
+    }
+
+    pub fn is_dir(&self) -> bool {
+        matches!(self.file_type, FileType::Dir)
     }
 }
 
@@ -51,14 +59,21 @@ fn main() {
             });
         if dir_sizes.insert(s, size).is_some() {
             panic!("{s}")
-        };
-        //println!("{s}: {size}");
+        }
     }
-    println!("{:?}", dir_sizes.get(&"root".to_string()).unwrap());
-}
 
-fn print_tree(tree: HashMap<String,FileData>) {
+    println!("Part 1: {}", dir_sizes.iter()
+        .map(|(k,v)| *v)
+        .filter(|n| *n <= PART1_MAX)
+        .sum::<usize>()
+    );
+    let root_size = dir_sizes.get(&"root".to_string()).unwrap();
 
+    println!("Part 2: {}", dir_sizes.iter()
+        .map(|(_,v)| *v)
+        .filter(|n| root_size - *n <= TARGET_SIZE)
+        .min().unwrap()
+    )
 }
 
 fn get_dir_hash_map(input: &str) -> HashMap<String, FileData> {
@@ -99,7 +114,7 @@ fn get_dir_hash_map(input: &str) -> HashMap<String, FileData> {
                                 FileData::new(
                                     &full_dir,
                                     &current_directory,
-                                    FileType::Doc(size.parse::<usize>().unwrap()),
+                                    FileType::Doc(size.parse().unwrap()),
                                 ),
                             );
                         }
@@ -107,9 +122,6 @@ fn get_dir_hash_map(input: &str) -> HashMap<String, FileData> {
                 }
             }
             other => panic!("{}", other),
-        }
-        if s.split_ascii_whitespace().next().unwrap().trim() == "cd" {
-            println!("{s}: {current_directory}");
         }
     }
 
