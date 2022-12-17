@@ -25,10 +25,6 @@ impl FileData {
             file_type,
         }
     }
-
-    pub fn is_dir(&self) -> bool {
-        matches!(self.file_type, FileType::Dir)
-    }
 }
 
 fn main() {
@@ -63,7 +59,7 @@ fn main() {
     }
 
     println!("Part 1: {}", dir_sizes.iter()
-        .map(|(k,v)| *v)
+        .map(|(_,v)| *v)
         .filter(|n| *n <= PART1_MAX)
         .sum::<usize>()
     );
