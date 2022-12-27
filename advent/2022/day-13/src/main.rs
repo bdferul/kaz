@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 
+///Enum for the possible parsed items in a packet
 #[derive(Clone, PartialEq, Eq, PartialOrd)]
 enum PacketItem {
     Int(u32),
@@ -15,23 +16,24 @@ impl std::fmt::Debug for PacketItem {
     }
 }
 
-impl PacketItem {
-    fn unwrap_int(&self) -> u32 {
-        match self {
-            Self::Int(n) => *n,
-            _ => panic!("unwrap_int"),
-        }
-    }
-}
+// impl PacketItem {
+//     fn unwrap_int(&self) -> u32 {
+//         match self {
+//             Self::Int(n) => *n,
+//             _ => panic!("unwrap_int"),
+//         }
+//     }
+// }
 
 fn main() {
-    let input = include_str!("test.txt").trim();
+    let input = include_str!("input.txt").trim();
+    // let input = include_str!("test.txt").trim();
     let mut sum = 0;
 
     for (pair, i) in input.split("\n\n").zip(1..) {
-        //println!("{pair}");
+        // println!("{pair}");
         let parsed = parse_input(pair);
-        if compare(&parsed) {
+        if compare(&parsed).is_good_or_other() {
             sum += i;
         } else {
             //println!("{i}\n{pair}\n");
@@ -48,14 +50,29 @@ fn main() {
         .flat_map(parse_input)
         .collect::<Vec<Vec<PacketItem>>>();
     input2.sort_by(|a, b| {
-        if compare(&[a.to_vec(), b.to_vec()]) {
+        if compare(&[a.to_vec(), b.to_vec()]).is_good_or_other() {
             Ordering::Less
         } else {
             Ordering::Greater
         }
     });
+
+    let key1 = input2
+        .iter()
+        .position(|x| *x == parse_input("[[2]]")[0])
+        .unwrap()
+        + 1;
+    let key2 = input2
+        .iter()
+        .position(|x| *x == parse_input("[[6]]")[0])
+        .unwrap()
+        + 1;
+    println!("Part 2: {}", key1 * key2);
     //dbg!(&input2);
-    input2.iter().for_each(|s| println!("{s:?}"));
+    input2
+        .iter()
+        .enumerate()
+        .for_each(|(i, s)| println!("{i}: {s:?}"));
 }
 
 fn parse_input(input: &str) -> Vec<Vec<PacketItem>> {
@@ -110,109 +127,124 @@ fn parse_packet(arg: &str) -> Vec<PacketItem> {
         .collect()
 }
 
-fn compare(packets: &[Vec<PacketItem>]) -> bool {
+enum PacketOrder {
+    Good,
+    Bad,
+    Other,
+}
+
+impl PacketOrder {
+    fn is_good_or_other(&self) -> bool {
+        matches!(self, Self::Good | Self::Other)
+    }
+
+    fn is_good(&self) -> bool {
+        matches!(self, Self::Good)
+    }
+}
+
+///hello:w
+fn compare(packets: &[Vec<PacketItem>]) -> PacketOrder {
     use PacketItem::*;
-    for i in 0.. {
-        if i >= packets[0].len() {
-            return true;
-        }
-        if i >= packets[1].len() {
-            return false;
-        }
-        let p1 = packets[0][i].clone();
-        let p2 = packets[1][i].clone();
+    use PacketOrder::*;
 
-        macro_rules! list_int {
-            ($a:expr, $b:expr) => {
-                {
-                    let a = list_to_int(List($a));
-                    if let Some(a) = a {
-                        if a == $b {
-                            continue;
-                        }
-        
-                        a < $b
-                    } else {
-                        true
-                    }
-                }
-            };
-        }
+    let mut packet1 = packets[0].clone();
+    let mut packet2 = packets[1].clone();
 
-        let outcome = match (p1.clone(), p2.clone()) {
-            (Int(a), Int(b)) => {
-                if a == b {
-                    continue;
-                }
-                a < b
+    let mut i = 0;
+    loop {
+        if i >= packet1.len() {
+            if packet1.len() == packet2.len() {
+                break Other;
             }
-            (Int(a), List(b)) => !list_int!(b, a),
-            (List(a), Int(b)) => list_int!(a, b),
-            (List(a), List(b)) => compare(&[a, b]),
-        };
-
-        return outcome;
-    }
-
-    false
-}
-
-fn list_to_int(list: PacketItem) -> Option<u32> {
-    let PacketItem::List(list) = list else {
-        panic!("list not list list_to_int");
-    };
-    let Some(mut list_first) = list.first() else {
-        return None;
-    };
-
-    while let PacketItem::List(l) = list_first {
-        let Some(zero) = l.first() else {
-            return None;
-        };
-
-        list_first = zero;
-    }
-
-    Some(list_first.unwrap_int())
-}
-
-fn cmp_list_int(list: PacketItem, int: PacketItem) -> bool {
-    use PacketItem::*;
-    let List(list) = list else {
-        panic!("list not List");
-    };
-    if list.is_empty() {
-        return true;
-    }
-    let Int(_) = int else {
-        panic!("int not Int")
-    };
-
-    let mut list_first = list[0].clone();
-    while let List(l) = list_first {
-        if l.is_empty() {
-            return true;
+            break Good;
         }
-        list_first = l[0].clone();
-    }
+        if i >= packet2.len() {
+            break Bad;
+        }
 
-    compare(&[vec![list_first], vec![int]])
+        match (packet1[i].clone(), packet2[i].clone()) {
+            (Int(a), Int(b)) => {
+                if a < b {
+                    break Good;
+                }
+                if a > b {
+                    break Bad;
+                }
+                if a == b {
+                    i += 1;
+                }
+            }
+            (Int(a), List(_)) => packet1[i] = List(vec![Int(a)]),
+            (List(_), Int(b)) => packet2[i] = List(vec![Int(b)]),
+            (List(a), List(b)) => match compare(&[a, b]) {
+                Good => break Good,
+                Bad => break Bad,
+                Other => i += 1,
+            },
+        }
+    }
 }
+
+// fn compare(packets: &[Vec<PacketItem>]) -> bool {
+//     use PacketItem::*;
+//     for i in 0.. {
+//         if i >= packets[0].len() {
+//             return true;
+//         }
+//         if i >= packets[1].len() {
+//             return false;
+//         }
+//         let p1 = packets[0][i].clone();
+//         let p2 = packets[1][i].clone();
+
+//         macro_rules! list_int {
+//             ($a:expr, $b:expr) => {{
+//                 let a = list_to_int(List($a));
+//                 if let Some(a) = a {
+//                     if a == $b {
+//                         continue;
+//                     }
+
+//                     a < $b
+//                 } else {
+//                     true
+//                 }
+//             }};
+//         }
+
+//         let outcome = match (p1.clone(), p2.clone()) {
+//             (Int(a), Int(b)) => {
+//                 if a == b {
+//                     continue;
+//                 }
+//                 a < b
+//             }
+//             (Int(a), List(b)) => !list_int!(b, a),
+//             (List(a), Int(b)) => list_int!(a, b),
+//             (List(a), List(b)) => compare(&[a, b]),
+//         };
+
+//         return outcome;
+//     }
+
+//     false
+// }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     #[test]
     fn cmp_int_int() {
-        assert!(compare(&parse_input("[1,2,3,4,5]\n[2,3,4,5,5]")));
-        assert!(!compare(&parse_input("[3]\n[2]")));
+        assert!(compare(&parse_input("[1,2,3,4,5]\n[2,3,4,5,5]")).is_good());
+        assert!(!compare(&parse_input("[3]\n[2]")).is_good_or_other());
     }
 
     #[test]
     fn cmp_list_list() {
-        assert!(compare(&parse_input("[]\n[2]")));
-        assert!(compare(&parse_input("[1,1,1]\n[1,1,1,1]")));
-        assert!(compare(&parse_input("[[[[1],1]]]\n[2]")));
-        assert!(!compare(&parse_input("[[]]\n[]")));
+        assert!(compare(&parse_input("[]\n[2]")).is_good_or_other());
+        assert!(compare(&parse_input("[1,1,1]\n[1,1,1,1]")).is_good_or_other());
+        assert!(compare(&parse_input("[[[[1],1]]]\n[2]")).is_good_or_other());
+        assert!(!compare(&parse_input("[[]]\n[]")).is_good_or_other());
     }
 }
