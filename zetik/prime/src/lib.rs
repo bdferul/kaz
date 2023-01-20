@@ -22,8 +22,8 @@
 /// Provides an iterator for generating prime numbers.
 ///
 /// ```
-/// # use zetik_prime::Prime;
-/// let mut primes = Prime::default();
+/// # use zetik_prime::PrimeIter;
+/// let mut primes = PrimeIter::default();
 /// assert_eq!(primes.next(), Some(2));
 /// assert_eq!(primes.next(), Some(3));
 /// assert_eq!(primes.next(), Some(5));
@@ -31,20 +31,20 @@
 /// assert_eq!(primes.next(), Some(11));
 /// ```
 #[derive(Default, PartialEq, Eq)]
-pub struct Prime {
+pub struct PrimeIter {
     primes: Vec<u64>,
 }
 
-impl Prime {
-    /// Equivilent to `Prime::default()`
+impl PrimeIter {
+    /// Equivilent to `PrimeIter::default()`
     ///
     /// ```
-    /// # use zetik_prime::Prime;
-    /// let mut new = Prime::new();
-    /// let mut default = Prime::default();
+    /// # use zetik_prime::PrimeIter;
+    /// let mut new = PrimeIter::new();
+    /// let mut default = PrimeIter::default();
     /// assert_eq!(new, default);
     /// ```
-    pub fn new() -> Prime {
+    pub fn new() -> PrimeIter {
         Default::default()
     }
 
@@ -53,8 +53,8 @@ impl Prime {
     /// Return value is an option to keep inline with `<Iterator>.next()`
     ///
     /// ```
-    /// # use zetik_prime::Prime;
-    /// let mut primes = Prime::default();
+    /// # use zetik_prime::PrimeIter;
+    /// let mut primes = PrimeIter::default();
     /// assert_eq!(primes.next_after(1000), Some(1009));
     /// ```
     pub fn next_after(&mut self, num: u64) -> Option<u64> {
@@ -66,14 +66,34 @@ impl Prime {
         })
     }
 
+    /// Returns the last value where the given condition is true, and sets the iterator at that value.
+    ///
+    /// ```
+    /// # use zetik_prime::PrimeIter;
+    /// let mut res = PrimeIter::default().last_where(|x| x <= 100);
+    /// ```
+    pub fn last_where<F>(&mut self, f: F) -> Option<u64>
+    where
+        F: Fn(<PrimeIter as Iterator>::Item) -> bool,
+    {
+        loop {
+            let next = self.next().unwrap();
+            if !f(next) {
+                self.primes.pop();
+                break self.primes.last().cloned();
+            }
+        }
+    }
+
     /// Returns `true` if no primes have been generated
     ///
     /// ```
-    /// # use zetik_prime::Prime;
-    /// let mut primes = Prime::default();
+    /// # use zetik_prime::PrimeIter;
+    /// let mut primes = PrimeIter::default();
     /// assert_eq!(primes.is_empty(), true);
     /// primes.next();
     /// assert_eq!(primes.is_empty(), false);
+    /// ```
     pub fn is_empty(&self) -> bool {
         self.primes.is_empty()
     }
@@ -81,8 +101,8 @@ impl Prime {
     /// Returns the length of the inner `Vec<u64>`
     ///
     /// ```
-    /// # use zetik_prime::Prime;
-    /// let mut primes = Prime::default();
+    /// # use zetik_prime::PrimeIter;
+    /// let mut primes = PrimeIter::default();
     /// primes.nth(100);
     /// assert_eq!(primes.len(), 101);
     /// ```
@@ -117,7 +137,7 @@ pub fn prime_factors(num: u64) -> Vec<u64> {
     facts
 }
 
-impl Iterator for Prime {
+impl Iterator for PrimeIter {
     type Item = u64;
 
     /// Returns the next prime number.
@@ -152,8 +172,16 @@ impl Iterator for Prime {
     }
 }
 
-impl core::fmt::Debug for Prime {
+impl core::fmt::Debug for PrimeIter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self.primes)
     }
 }
+
+trait Seven {
+    fn seven(&self) -> i32 {
+        7
+    }
+}
+
+impl Seven for PrimeIter {}
