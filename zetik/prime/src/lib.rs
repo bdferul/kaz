@@ -66,6 +66,14 @@ impl Prime {
         })
     }
 
+    /// Returns `true` if no primes have been generated
+    ///
+    /// ```
+    /// # use zetik_prime::Prime;
+    /// let mut primes = Prime::default();
+    /// assert_eq!(primes.is_empty(), true);
+    /// primes.next();
+    /// assert_eq!(primes.is_empty(), false);
     pub fn is_empty(&self) -> bool {
         self.primes.is_empty()
     }

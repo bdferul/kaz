@@ -13,10 +13,6 @@ fn main() {
         .parse()
         .unwrap();
 
-    let mut x = 1..5;
-
-    x.nth(0);
-
     let mut primes = Prime::default();
 
     let next_after = primes.next_after(input_start).unwrap();
