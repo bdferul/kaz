@@ -1,38 +1,30 @@
+use clap::Parser;
 use zetik_prime::PrimeIter;
 
-fn main() {
-    let mut args = std::env::args();
-    let input_start: u64 = args
-        .nth(1)
-        .unwrap_or_else(|| "0".to_string())
-        .parse()
-        .unwrap();
-    let input_after: u64 = args
-        .next()
-        .unwrap_or_else(|| "0".to_string())
-        .parse()
-        .unwrap();
-    let input_range: usize = args
-        .next()
-        .unwrap_or_else(|| "5".to_string())
-        .parse()
-        .unwrap();
+#[derive(Debug, Parser)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Will only show prime numbers after this input
+    #[arg(short, long, default_value = "1834")]
+    start: u64,
 
-    let print_fmt = |id, next| println!("{id}> +{} {next} ", next - input_start);
+    /// Will only show prime numbers after this input
+    #[arg(short, long, default_value = "0")]
+    after: u64,
+
+    /// How many values will be printed
+    #[arg(short, long, default_value = "7")]
+    range: u64,
+}
+
+fn main() {
+    let opt = Args::parse();
+    let print_fmt = |id, next| println!("{id}> +{} {next} ", next - opt.start);
 
     let mut primes = PrimeIter::default();
-    primes.last_where(|x| x < input_start + input_after);
-    for i in 1..=input_range {
+    primes.last_where(|x| x < opt.start + opt.after);
+    for i in 1..=opt.range {
         let next = primes.next().unwrap();
         print_fmt(i, next);
     }
-
-    /*
-    let next_after = primes.next_after(input_start).unwrap();
-    print_fmt(primes.len(), next_after);
-    for i in 2..=input_range {
-        let next = primes.next().unwrap();
-        print_fmt(primes.len(), next);
-    }
-    */
 }

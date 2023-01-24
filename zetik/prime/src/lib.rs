@@ -25,52 +25,42 @@
 /// # use zetik_prime::PrimeIter;
 /// let mut primes = PrimeIter::default();
 /// assert_eq!(primes.next(), Some(2));
-/// assert_eq!(primes.next(), Some(3));
-/// assert_eq!(primes.next(), Some(5));
-/// assert_eq!(primes.next(), Some(7));
-/// assert_eq!(primes.next(), Some(11));
+///
+/// let next5: Vec<u64> = primes.take(5).collect();
+/// assert_eq!(next5, [3, 5, 7, 11, 13]);
 /// ```
+#[must_use = "iterators are lazy and do nothing unless consumed"]
 #[derive(Default, PartialEq, Eq)]
 pub struct PrimeIter {
     primes: Vec<u64>,
 }
 
 impl PrimeIter {
-    /// Equivilent to `PrimeIter::default()`
-    ///
-    /// ```
-    /// # use zetik_prime::PrimeIter;
-    /// let mut new = PrimeIter::new();
-    /// let mut default = PrimeIter::default();
-    /// assert_eq!(new, default);
-    /// ```
-    pub fn new() -> PrimeIter {
-        Default::default()
-    }
-
     /// Returns the prime number after the given argument.
     ///
     /// Return value is an option to keep inline with `<Iterator>.next()`
     ///
     /// ```
     /// # use zetik_prime::PrimeIter;
-    /// let mut primes = PrimeIter::default();
-    /// assert_eq!(primes.next_after(1000), Some(1009));
+    /// let mut res = PrimeIter::default().next_after(1000);
+    /// assert_eq!(res, 1009);
     /// ```
-    pub fn next_after(&mut self, num: u64) -> Option<u64> {
-        Some(loop {
+    pub fn next_after(&mut self, num: u64) -> u64 {
+        loop {
             let next = self.next().unwrap();
             if next > num {
                 break next;
             }
-        })
+        }
     }
 
     /// Returns the last value where the given condition is true, and sets the iterator at that value.
     ///
     /// ```
     /// # use zetik_prime::PrimeIter;
-    /// let mut res = PrimeIter::default().last_where(|x| x <= 100);
+    /// let mut res = PrimeIter::default().last_where(|x| x <= 100).unwrap();
+    ///
+    /// assert_eq!(res, 97);
     /// ```
     pub fn last_where<F>(&mut self, f: F) -> Option<u64>
     where
@@ -177,11 +167,3 @@ impl core::fmt::Debug for PrimeIter {
         write!(f, "{:?}", self.primes)
     }
 }
-
-trait Seven {
-    fn seven(&self) -> i32 {
-        7
-    }
-}
-
-impl Seven for PrimeIter {}
