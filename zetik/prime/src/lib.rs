@@ -1,3 +1,5 @@
+#![warn(clippy::nursery, clippy::complexity)]
+
 //! # zetik_prime
 //!
 //! A library primarily dedicated to generating prime numbers with an iterator
@@ -64,7 +66,7 @@ impl PrimeIter {
     /// ```
     pub fn last_where<F>(&mut self, f: F) -> Option<u64>
     where
-        F: Fn(<PrimeIter as Iterator>::Item) -> bool,
+        F: Fn(<Self as Iterator>::Item) -> bool,
     {
         loop {
             let next = self.next().unwrap();
