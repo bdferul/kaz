@@ -1,37 +1,44 @@
+use std::collections::{btree_map::ValuesMut, HashMap};
+
 const INPUT: &str = include_str!("input.txt");
+const TIME_LIMIT: i64 = 30;
+const STARTING_VALVE: &str = "AA";
+const SKIP_IF: i32 = 3;
 
 #[derive(Default, Debug)]
 struct Valve {
     label: String,
     flow_rate: i32,
     leads_to: Vec<String>,
-}
-
-impl Valve {
-    fn new() -> Self {
-        Default::default()
-    }
-
-    fn label(self, input: &str) -> Self {
-        Self {
-            label: input.to_string(),
-            ..self
-        }
-    }
-
-    fn flow(self, flow_rate: i32) -> Self {
-        Self { flow_rate, ..self }
-    }
-
-    fn leads_to(self, leads_to: Vec<String>) -> Self {
-        Self { leads_to, ..self }
-    }
+    open: bool,
 }
 
 fn main() {
-    let valves = parse_input(INPUT);
+    let mut valves = HashMap::new();
 
-    dbg!(valves);
+    for valve in parse_input(INPUT) {
+        valves.insert(valve.label.clone(), valve);
+    }
+
+    let mut part1 = 0;
+    let mut flow_rate = 0;
+    let mut current_valve = STARTING_VALVE;
+
+    for _ in 0..TIME_LIMIT {
+        let valve = valves.get_mut(current_valve).unwrap();
+
+        dbg!(&valve);
+
+        if valve.flow_rate > SKIP_IF && !valve.open {
+            valve.open = false;
+            flow_rate += valve.flow_rate;
+        } else {
+        }
+
+        part1 += flow_rate;
+    }
+
+    println!("Part 1: {part1}");
 }
 
 fn parse_input(input: &str) -> Vec<Valve> {
@@ -51,12 +58,12 @@ fn parse_input(input: &str) -> Vec<Valve> {
 
         splits.push(line);
 
-        dbg!(&splits);
-
-        let valve = Valve::new()
-            .label(splits[1])
-            .flow(splits[3].parse().unwrap())
-            .leads_to(splits[6].split(',').map(|s| s.trim().to_string()).collect());
+        let valve = Valve {
+            label: splits[1].to_string(),
+            flow_rate: splits[3].parse().unwrap(),
+            leads_to: splits[6].split(',').map(|s| s.trim().to_string()).collect(),
+            open: false,
+        };
 
         r.push(valve);
     }

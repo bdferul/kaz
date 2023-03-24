@@ -1,38 +1,55 @@
-use std::{thread, time::Duration};
+use std::{
+    ops::Div,
+    sync::{Arc, Mutex},
+    thread,
+    time::Duration,
+};
 
 fn main() {
-    let start = 100;
-    let mut primes = primes_under(start * start);
+    let start = 2;
+    let arc_primes = Arc::new(Mutex::new(primes_under(start * start)));
 
-    for a in start..start + 1 {
-        let b = a + 1;
+    let (prod, recv) = std::sync::mpsc::channel();
+
+    for a in start..start + 4 {
+        let b = arc_primes.lock().unwrap().last().cloned().unwrap();
         thread::scope(|s| {
-            let mut threads = vec![];
             for count in a * a..b * b {
-                threads.push(s.spawn(move || println!("{}", count)));
+                dbg!(count);
+                if count > 1_000_000 {
+                    break;
+                }
+                let arc_primes_clone = arc_primes.clone();
+                let prod = prod.clone();
+                s.spawn(move || {
+                    let mut is_prime = true;
+                    for p in arc_primes_clone.lock().unwrap().iter() {
+                        if count % p == 0 {
+                            is_prime = false;
+                            break;
+                        }
+                        if p * p > count {
+                            break;
+                        }
+                    }
+                    prod.send((count, is_prime)).unwrap();
+                });
             }
-        })
-    }
-}
+        });
 
-fn factor(x: &u128) -> Vec<u128> {
-    let mut pre = vec![];
-    let mut post = vec![];
+        let mut v = recv
+            .try_iter()
+            .filter_map(|(p, b)| b.then_some(p))
+            .collect::<Vec<u128>>();
 
-    for i in 1.. {
-        let (q, r) = (x / i, x % i);
-        if q < i {
-            break;
-        }
-        if r == 0 {
-            pre.push(i);
-            if q != i {
-                post.push(q);
-            }
-        }
+        v.sort();
+
+        let mut primes = arc_primes.lock().unwrap();
+        primes.extend(v.into_iter());
+        println!("{a}: {}", primes.len());
     }
 
-    pre.into_iter().chain(post.into_iter().rev()).collect()
+    eprintln!("{arc_primes:?}");
 }
 
 /// returns a vector all prime numbers under the given maximum

@@ -1,5 +1,6 @@
 use std::{
-    thread::sleep,
+    sync::mpsc::channel,
+    thread::{sleep, spawn},
     time::{Duration, Instant},
 };
 
@@ -7,9 +8,10 @@ const OUTPUTS: [&str; 4] = ["one", "two", "three", "four"];
 
 fn main() {
     for max_wait in 1..=4 {
-        let (p, c) = std::sync::mpsc::channel();
+        println!("max_wait: {max_wait}");
+        let (p, c) = channel();
 
-        std::thread::spawn(move || {
+        spawn(move || {
             for o in OUTPUTS {
                 let start = Instant::now();
                 let sleep = Duration::from_millis(850);
@@ -18,14 +20,16 @@ fn main() {
                         return;
                     }
                 }
-                println!("{o}");
+                println!("{o}")
             }
         });
 
         sleep(Duration::from_secs(max_wait));
-        match p.send(()) {
-            Ok(_) => println!("Interrupted"),
-            Err(_) => println!("Done!"),
-        }
+        let status = if p.send(()).is_ok() {
+            "Interrupted"
+        } else {
+            "Done!"
+        };
+        println!("{status}");
     }
 }

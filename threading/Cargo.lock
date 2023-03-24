@@ -3,5 +3,14 @@
 version = 3
 
 [[package]]
+name = "chain_tools"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "324c1b8c89560fe3a6e5befa394ebdb944612cd3ab7a1ba2b58926bc4d61e128"
+
+[[package]]
 name = "threading"
 version = "0.1.0"
+dependencies = [
+ "chain_tools",
+]
